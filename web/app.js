@@ -30,9 +30,25 @@ async function api(url, opts = {}) {
 }
 
 /* ---------- view switching ---------- */
+// 데스크톱 투페인 — 넓은 화면에서는 목록이 사이드바로 상주한다
+const DESKTOP = window.matchMedia("(min-width: 1024px)");
+
 function showView(name) {
   for (const v of ["list", "builder", "chat", "memories"]) $(`view-${v}`).hidden = v !== name;
+  if (DESKTOP.matches && name !== "list") $("view-list").hidden = false;
   if (name === "list") loadList();
+  markActiveCard();
+}
+
+DESKTOP.addEventListener("change", () => {
+  const mainOpen = ["builder", "chat", "memories"].some(v => !$(`view-${v}`).hidden);
+  $("view-list").hidden = mainOpen && !DESKTOP.matches;
+});
+
+function markActiveCard() {
+  const current = !$("view-chat").hidden || !$("view-memories").hidden ? chatId : null;
+  for (const card of document.querySelectorAll("#companion-list .card"))
+    card.classList.toggle("active", !!current && card.dataset.cid === current);
 }
 
 /* ---------- 기억 열람·정정 ---------- */
@@ -128,6 +144,7 @@ async function loadList() {
     const tpl = TEMPLATES.find(t => t.id === c.relationship.template);
     const div = document.createElement("div");
     div.className = "card";
+    div.dataset.cid = c.id;
     div.innerHTML = `
       <div class="avatar">${escapeHtml(c.name[0] || "?")}</div>
       <div class="meta">
@@ -139,6 +156,7 @@ async function loadList() {
     div.querySelector("[data-edit]").onclick = (e) => { e.stopPropagation(); openBuilder(c); };
     el.appendChild(div);
   }
+  markActiveCard();  // 목록은 비동기로 다시 그려지므로 활성 표시 재적용
 }
 
 /* ---------- builder ---------- */

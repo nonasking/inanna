@@ -140,3 +140,20 @@ button.small { padding: 8px 10px; }
 .memory-card { align-items: flex-start; }
 .memory-content { white-space: pre-wrap; word-break: break-word; }
 .memory-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+/* ---------- 데스크톱 투페인 (≥1024px) ----------
+   다른 뷰가 열려 있으면 컴패니언 목록이 왼쪽 사이드바로 상주하고
+   (showView가 hidden을 유지해준다), 메인 뷰가 오른쪽을 채운다. */
+@media (min-width: 1024px) {
+  body { display: flex; justify-content: center; }
+  .view { height: 100vh; }
+  body:has(#view-builder:not([hidden]), #view-chat:not([hidden]), #view-memories:not([hidden]))
+    #view-list {
+    width: 340px; flex-shrink: 0; margin: 0;
+    border-right: 1px solid var(--panel2);
+  }
+  body:has(#view-builder:not([hidden]), #view-chat:not([hidden]), #view-memories:not([hidden]))
+    #view-list .list-actions .primary { flex: none; }
+  #view-builder, #view-chat, #view-memories { flex: 1; max-width: 900px; margin: 0; }
+  .card.active { background: var(--panel2); box-shadow: inset 3px 0 0 var(--accent); }
+}
