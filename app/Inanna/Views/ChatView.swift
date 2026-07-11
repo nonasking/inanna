@@ -2,13 +2,14 @@ import SwiftUI
 
 struct ChatView: View {
     @EnvironmentObject var app: AppState
-    let companion: Companion
+    @State var companion: Companion
 
     @State private var messages: [ChatMessage] = []
     @State private var input = ""
     @State private var streaming = false
     @State private var showCall = false
     @State private var showMemories = false
+    @State private var showEdit = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,16 +32,20 @@ struct ChatView: View {
         .navigationTitle(companion.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if companion.voice.engine != nil {
+            if companion.voice.engine?.isEmpty == false {
                 Button { showCall = true } label: { Image(systemName: "phone") }
             }
             Button { showMemories = true } label: { Image(systemName: "brain") }
+            Button { showEdit = true } label: { Image(systemName: "slider.horizontal.3") }
         }
         .fullScreenCover(isPresented: $showCall) {
             CallView(companion: companion)
         }
         .sheet(isPresented: $showMemories) {
             MemoriesView(companion: companion)
+        }
+        .sheet(isPresented: $showEdit) {
+            CompanionEditView(companion: companion) { companion = $0 }
         }
         .task { await loadHistory() }
     }

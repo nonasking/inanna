@@ -1,0 +1,119 @@
+{
+  "" : {
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Inanna-primary.dia",
+    "emit-module-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Inanna-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Inanna-primary-emit-module.dia",
+    "pch" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Inanna-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Inanna-primary.swiftdeps"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/APIClient.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/APIClient.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/APIClient.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/APIClient.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/APIClient.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/APIClient.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/APIClient.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/APIClient.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/APIClient~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/AppState.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/AppState.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/AppState.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/AppState.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/AppState.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/AppState.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/AppState.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/AppState.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/AppState~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/CallEngine.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallEngine.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallEngine.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallEngine.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallEngine.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallEngine.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallEngine.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallEngine.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallEngine~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/InannaApp.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/InannaApp.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/InannaApp.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/InannaApp.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/InannaApp.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/InannaApp.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/InannaApp.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/InannaApp.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/InannaApp~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/Models.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Models.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Models.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Models.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Models.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Models.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Models.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Models.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/Models~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/Views/CallView.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallView.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallView.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallView.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallView.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallView.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallView.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallView.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CallView~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/Views/ChatView.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/ChatView.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/ChatView.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/ChatView.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/ChatView.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/ChatView.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/ChatView.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/ChatView.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/ChatView~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/Views/CompanionEditView.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionEditView.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionEditView.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionEditView.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionEditView.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionEditView.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionEditView.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionEditView.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionEditView~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/Views/CompanionListView.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionListView.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionListView.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionListView.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionListView.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionListView.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionListView.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionListView.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/CompanionListView~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/Views/MemoriesView.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/MemoriesView.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/MemoriesView.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/MemoriesView.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/MemoriesView.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/MemoriesView.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/MemoriesView.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/MemoriesView.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/MemoriesView~partial.swiftmodule"
+  },
+  "/Users/kangminsung/dev/inanna/app/Inanna/Views/SetupView.swift" : {
+    "const-values" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/SetupView.swiftconstvalues",
+    "dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/SetupView.d",
+    "diagnostics" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/SetupView.dia",
+    "index-unit-output-path" : "/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/SetupView.o",
+    "llvm-bc" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/SetupView.bc",
+    "object" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/SetupView.o",
+    "swift-dependencies" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/SetupView.swiftdeps",
+    "swiftmodule" : "/Users/kangminsung/dev/inanna/app/build-device/Build/Intermediates.noindex/Inanna.build/Debug-iphoneos/Inanna.build/Objects-normal/arm64/SetupView~partial.swiftmodule"
+  }
+}

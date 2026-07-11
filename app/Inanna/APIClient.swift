@@ -34,6 +34,15 @@ struct APIClient {
         return try JSONDecoder().decode(T.self, from: data)
     }
 
+    /// Codable 본문 POST — 컴패니언 저장 등 전체 스키마 왕복용
+    func post<Body: Encodable>(_ path: String, body: Body) async throws {
+        var req = request(path, method: "POST")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(body)
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try check(resp, data)
+    }
+
     func send(_ path: String, method: String = "POST",
               json: [String: Any]? = nil) async throws -> Data {
         let (data, resp) = try await URLSession.shared.data(
