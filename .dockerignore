@@ -1,0 +1,14 @@
+.git
+.venv
+__pycache__
+**/__pycache__
+.env
+inanna.db
+companions/
+voices/
+tests/
+docs/
+scripts/
+.dockerignore
+Dockerfile
+docker-compose.yml

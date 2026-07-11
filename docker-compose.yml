@@ -1,0 +1,14 @@
+# 호스티드 배포 — `docker compose up -d`
+# 설정은 .env (ANTHROPIC_API_KEY, INANNA_AUTH_TOKEN, INANNA_MODEL, ...)
+services:
+  inanna:
+    build: .
+    ports:
+      - "8787:8787"
+    env_file: .env
+    volumes:
+      - inanna-data:/data
+    restart: unless-stopped
+
+volumes:
+  inanna-data:
