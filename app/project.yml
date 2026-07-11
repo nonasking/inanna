@@ -27,3 +27,5 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: dev.nonasking.inanna
       INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: J6H63W2C5Z   # Personal Team (무료 프로비저닝, 7일 서명)
