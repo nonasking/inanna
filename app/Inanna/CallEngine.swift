@@ -62,7 +62,7 @@ final class CallEngine: NSObject, ObservableObject {
         let session = AVAudioSession.sharedInstance()
         // voiceChat 모드 = 에코 캔슬레이션 (스피커 재생 중 마이크로 안 들어가게)
         try session.setCategory(.playAndRecord, mode: .voiceChat,
-                                options: [.defaultToSpeaker, .allowBluetooth])
+                                options: [.defaultToSpeaker, .allowBluetoothHFP])
         try session.setActive(true)
 
         let input = engine.inputNode
