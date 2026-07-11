@@ -155,6 +155,36 @@ def test_auth():
     assert not db.all_memories(uid2, "c1"), "계정 삭제 후 기억 잔존"
 
 
+def test_billing():
+    from server import auth, billing
+    from server.memory import db
+    db.init()
+    token = auth.register("tier@inanna.test", "password123")
+    uid = auth.resolve_token(token)
+    # 셀프호스팅 오너는 무과금 통과
+    assert not billing.is_metered("local")
+    billing.check_chat_quota("local")
+    assert billing.effective_model("local") is None
+    # 계정 유저: 기본 티어 + 티어가 모델 결정
+    assert billing.is_metered(uid)
+    assert billing.get_tier(uid) == billing.DEFAULT_TIER
+    assert billing.effective_model(uid) == ("anthropic",
+                                            billing.TIERS["lite"]["model"])
+    billing.set_tier(uid, "deep")
+    assert billing.status(uid)["tier"] == "deep"
+    # 쿼터 소진 → 차단
+    billing.set_tier(uid, "lite")
+    limit = billing.TIERS["lite"]["monthly_output_tokens"]
+    db.add_usage(uid, "c1", "llm", output_tokens=limit)
+    try:
+        billing.check_chat_quota(uid)
+        raise AssertionError("쿼터 초과가 차단돼야 함")
+    except billing.QuotaExceeded:
+        pass
+    billing.check_tts_quota(uid)  # 음성 쿼터는 별도 — 아직 여유
+    auth.delete_account(uid)
+
+
 if __name__ == "__main__":
     print("── 유닛 스모크")
     check("관계 스왑 블록 분리", test_relationship_swap)
@@ -165,6 +195,7 @@ if __name__ == "__main__":
     check("VAD 발화 감지", test_vad)
     check("기억 CRUD·사용량", test_memory_crud)
     check("계정 인증 (가입·로그인·삭제)", test_auth)
+    check("과금 티어·쿼터", test_billing)
     if FAILURES:
         print(f"\n실패 {len(FAILURES)}: {', '.join(FAILURES)}")
         sys.exit(1)

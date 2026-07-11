@@ -1,7 +1,7 @@
 """대화 루프 — 세션 관리, 프롬프트 조립, 스트리밍, 기억 기록."""
 from collections.abc import Iterator
 
-from .. import config
+from .. import billing, config
 from ..companion.schema import Companion
 from ..llm import get_provider
 from ..memory import db, recall, summarizer
@@ -57,6 +57,8 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
     주의: 제너레이터가 완주해야 assistant 응답이 저장된다. 중간에 close()하면
     호출자가 축적분을 직접 저장해야 한다 (음성 인터럽트 경로).
     """
+    billing.check_chat_quota(user_id)  # 계정 유저 월간 쿼터 (셀프호스팅은 통과)
+
     # 관계 진행(오랜만/기념일)은 이번 메시지 저장 전 상태 기준으로 계산
     situation = relationship.build_context(user_id, companion)
     if extra_context:
@@ -87,7 +89,10 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
         history[-1] = {"role": "user", "content":
                        f"[컨텍스트 — 상대의 말 아님]\n{ctx}\n[/컨텍스트]\n\n{user_message}"}
 
-    provider = get_provider(companion.model.provider, companion.model.name)
+    # 제품 모드: 계정 유저의 모델은 티어가 결정 (컴패니언 오버라이드 무시).
+    # 어떤 티어든 기억·관계 데이터는 동일하다.
+    tiered = billing.effective_model(user_id)
+    provider = get_provider(*(tiered or (companion.model.provider, companion.model.name)))
     provider.last_usage = None
     parts: list[str] = []
     for delta in provider.stream_chat(system, history, max_tokens=config.CHAT_MAX_TOKENS):

@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, config, tts
+from . import auth, billing, config, tts
 from .chat import orchestrator
 from .companion import card_import, store, templates
 from .companion.schema import Companion, Voice
@@ -164,6 +164,10 @@ def chat(companion_id: str, req: ChatRequest, user: str = Depends(current_user))
         companion = store.load(user, companion_id)
     except FileNotFoundError:
         raise HTTPException(404, "companion not found")
+    try:
+        billing.check_chat_quota(user)  # SSE 시작 전에 깔끔한 402로
+    except billing.QuotaExceeded as e:
+        raise HTTPException(402, str(e))
     session_id, _ = orchestrator.ensure_session(user, companion)
     return _sse(orchestrator.chat_stream(user, companion, session_id, req.message))
 
@@ -215,6 +219,11 @@ async def _synthesize(voice: Voice, text: str, user: str = "",
                       companion_id: str | None = None) -> Response:
     if not voice.engine:
         raise HTTPException(400, "이 컴패니언에는 목소리가 설정되지 않았습니다")
+    if user:
+        try:
+            billing.check_tts_quota(user)
+        except billing.QuotaExceeded as e:
+            raise HTTPException(402, str(e))
     try:
         audio, mime = await tts.get_engine(voice.engine).synthesize(text, voice)
     except ValueError as e:
@@ -271,6 +280,29 @@ def remove_memory(memory_id: int, user: str = Depends(current_user)):
     if not db.delete_memory(user, memory_id):
         raise HTTPException(404, "memory not found")
     return {"ok": True}
+
+
+# ---------- 과금 (티어·쿼터 — IAP 연동 전 골격) ----------
+
+@app.get("/api/billing")
+def billing_status(user: str = Depends(current_user)):
+    return billing.status(user)
+
+
+class TierChange(BaseModel):
+    tier: str
+
+
+@app.put("/api/billing/tier")
+def billing_set_tier(req: TierChange, user: str = Depends(current_user)):
+    """IAP 연동 전 개발용 — 제품 모드에서는 영수증 검증이 이 자리를 대체한다."""
+    if not billing.is_metered(user):
+        raise HTTPException(400, "셀프호스팅 오너는 과금 대상이 아닙니다")
+    try:
+        billing.set_tier(user, req.tier)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return billing.status(user)
 
 
 @app.get("/api/usage")
