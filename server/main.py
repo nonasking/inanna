@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import config, tts
+from . import auth, config, tts
 from .chat import orchestrator
 from .companion import card_import, store, templates
 from .companion.schema import Companion, Voice
@@ -30,13 +30,69 @@ async def static_no_cache(request, call_next):
     return response
 
 
+def _resolve_user(token: str) -> str | None:
+    """토큰 → user_id. 셀프호스팅 단일 토큰과 계정 세션 토큰을 모두 받는다."""
+    if config.AUTH_TOKEN and secrets.compare_digest(token, config.AUTH_TOKEN):
+        return config.DEFAULT_USER          # 셀프호스팅 오너 (기존 동작)
+    return auth.resolve_token(token)        # 계정 유저 ('u<id>') 또는 None
+
+
 def current_user(authorization: str | None = Header(None)) -> str:
-    """P0: bearer 토큰이 곧 단일 유저. P4(제품 모드)에서 계정 인증으로 교체되는 자리."""
+    token = (authorization or "").removeprefix("Bearer ").strip()
+    user = _resolve_user(token)
+    if user:
+        return user
     if config.AUTH_TOKEN:
-        expected = f"Bearer {config.AUTH_TOKEN}"
-        if not authorization or not secrets.compare_digest(authorization, expected):
-            raise HTTPException(401, "unauthorized")
-    return config.DEFAULT_USER
+        raise HTTPException(401, "unauthorized")
+    return config.DEFAULT_USER              # 토큰 미설정 셀프호스팅 = 열린 단일 유저
+
+
+# ---------- 계정 (P4 멀티유저 — 셀프호스팅 단일 토큰과 공존) ----------
+
+class Credentials(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/api/auth/register")
+def auth_register(req: Credentials):
+    try:
+        token = auth.register(req.email, req.password)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"token": token}
+
+
+@app.post("/api/auth/login")
+def auth_login(req: Credentials):
+    token = auth.login(req.email, req.password)
+    if not token:
+        raise HTTPException(401, "이메일 또는 비밀번호가 올바르지 않습니다")
+    return {"token": token}
+
+
+@app.post("/api/auth/logout")
+def auth_logout(authorization: str | None = Header(None),
+                user: str = Depends(current_user)):
+    auth.logout((authorization or "").removeprefix("Bearer ").strip())
+    return {"ok": True}
+
+
+@app.get("/api/auth/me")
+def auth_me(user: str = Depends(current_user)):
+    info = auth.account_info(user)
+    return {"user_id": user, "email": info["email"] if info else None}
+
+
+@app.delete("/api/auth/account")
+def auth_delete(user: str = Depends(current_user)):
+    """계정+전체 데이터 완전 삭제 — App Store 5.1.1(v) 요건, 데이터 소유 원칙."""
+    if not user.startswith("u"):
+        raise HTTPException(400, "셀프호스팅 오너 계정은 API로 삭제할 수 없습니다")
+    for c in store.list_companions(user):
+        store.delete(user, c.id)
+    auth.delete_account(user)
+    return {"ok": True}
 
 
 # ---------- companions ----------
@@ -321,16 +377,18 @@ async def voice_call(ws: WebSocket, companion_id: str):
                     return msg["text"]
                 # 바이너리(마이크 프레임)는 인증 전이므로 폐기
 
+        user = None
         try:
             first = json.loads(await first_text())
-            authed = first.get("type") == "auth" and secrets.compare_digest(
-                str(first.get("token", "")), config.AUTH_TOKEN)
+            if first.get("type") == "auth":
+                user = _resolve_user(str(first.get("token", "")))
         except Exception:
-            authed = False
-        if not authed:
+            user = None
+        if not user:
             await ws.close(code=4401, reason="unauthorized")
             return
-    user = config.DEFAULT_USER
+    else:
+        user = config.DEFAULT_USER
     try:
         companion = store.load(user, companion_id)
     except FileNotFoundError:

@@ -124,6 +124,37 @@ def test_memory_crud():
     assert s and s[0]["input_tokens"] == 10
 
 
+def test_auth():
+    from server import auth
+    from server.memory import db
+    db.init()
+    # 가입 → 토큰 → user_id 스코핑
+    token = auth.register("qa@inanna.test", "password123")
+    uid = auth.resolve_token(token)
+    assert uid and uid.startswith("u")
+    assert auth.account_info(uid)["email"] == "qa@inanna.test"
+    # 중복 가입·형식·짧은 비번 거절
+    for bad in [("qa@inanna.test", "password123"), ("notmail", "password123"),
+                ("x@y.zz", "short")]:
+        try:
+            auth.register(*bad)
+            raise AssertionError(f"거절돼야 함: {bad}")
+        except ValueError:
+            pass
+    # 로그인 성공/실패 + 로그아웃
+    assert auth.login("qa@inanna.test", "password123")
+    assert auth.login("qa@inanna.test", "wrong-password") is None
+    auth.logout(token)
+    assert auth.resolve_token(token) is None, "로그아웃 후 토큰 생존"
+    # 계정 삭제 = 데이터 완전 삭제
+    token2 = auth.login("qa@inanna.test", "password123")
+    uid2 = auth.resolve_token(token2)
+    db.add_memory(uid2, "c1", "지울 기억")
+    auth.delete_account(uid2)
+    assert auth.login("qa@inanna.test", "password123") is None
+    assert not db.all_memories(uid2, "c1"), "계정 삭제 후 기억 잔존"
+
+
 if __name__ == "__main__":
     print("── 유닛 스모크")
     check("관계 스왑 블록 분리", test_relationship_swap)
@@ -133,6 +164,7 @@ if __name__ == "__main__":
     check("문장 분리", test_sentence_split)
     check("VAD 발화 감지", test_vad)
     check("기억 CRUD·사용량", test_memory_crud)
+    check("계정 인증 (가입·로그인·삭제)", test_auth)
     if FAILURES:
         print(f"\n실패 {len(FAILURES)}: {', '.join(FAILURES)}")
         sys.exit(1)

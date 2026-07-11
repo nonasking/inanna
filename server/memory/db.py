@@ -28,6 +28,19 @@ CREATE TABLE IF NOT EXISTS memories (
     created_at REAL NOT NULL,
     source_session INTEGER
 );
+CREATE TABLE IF NOT EXISTS accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE,
+    password_hash TEXT,              -- scrypt salt$hash (SIWA 계정은 NULL)
+    apple_sub TEXT UNIQUE,           -- Sign in with Apple subject (P4 어댑터 자리)
+    created_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS auth_tokens (
+    token TEXT PRIMARY KEY,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    created_at REAL NOT NULL,
+    last_used REAL
+);
 CREATE TABLE IF NOT EXISTS usage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ts REAL NOT NULL,
