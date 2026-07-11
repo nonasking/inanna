@@ -1,0 +1,29 @@
+# XcodeGen 프로젝트 정의 — `xcodegen generate` 로 Inanna.xcodeproj 생성
+# (xcodeproj는 생성물이라 커밋하지 않는다)
+name: Inanna
+options:
+  bundleIdPrefix: dev.nonasking
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  MARKETING_VERSION: 0.1.0
+  CURRENT_PROJECT_VERSION: 1
+  SWIFT_VERSION: 5.9
+targets:
+  Inanna:
+    type: application
+    platform: iOS
+    sources: [Inanna]
+    info:
+      path: Inanna/Info.plist
+      properties:
+        UILaunchScreen: {}
+        NSMicrophoneUsageDescription: 컴패니언과 음성 통화를 하려면 마이크가 필요해요.
+        NSAppTransportSecurity:
+          # 개발 모드: Tailscale HTTPS 또는 로컬 HTTP 서버 접속 허용
+          NSAllowsLocalNetworking: true
+        UIBackgroundModes: [audio]
+        CFBundleDisplayName: Inanna
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: dev.nonasking.inanna
+      INFOPLIST_KEY_UIUserInterfaceStyle: Dark
