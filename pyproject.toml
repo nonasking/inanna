@@ -1,0 +1,27 @@
+[project]
+name = "inanna"
+version = "0.1.0"
+description = "Relationship-first, self-hosted AI companion"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "anthropic>=0.116",
+    "httpx>=0.27",
+    "python-multipart>=0.0.9",
+    "edge-tts>=6.1",
+    "websockets>=12",
+]
+
+[project.scripts]
+inanna = "server.main:run"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["server", "server.companion", "server.chat", "server.memory", "server.llm", "server.tts"]

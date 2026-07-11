@@ -1,0 +1,9 @@
+companions/
+voices/
+__pycache__/
+.venv/
+*.pyc
+.DS_Store
+inanna.db
+*.egg-info/
+.env

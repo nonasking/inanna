@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12121a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Inanna</title>
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="stylesheet" href="/static/style.css?v=3">
+</head>
+<body>
+
+<!-- 목록 -->
+<section id="view-list" class="view">
+  <header class="bar">
+    <h1>Inanna</h1>
+    <span id="provider-badge" class="badge"></span>
+  </header>
+  <div id="companion-list" class="list"></div>
+  <div class="list-actions">
+    <button class="primary" onclick="openBuilder()">+ 새 컴패니언</button>
+    <label class="ghost file-btn">카드 임포트
+      <input type="file" id="card-file" accept=".png,.json" hidden>
+    </label>
+  </div>
+</section>
+
+<!-- 빌더 -->
+<section id="view-builder" class="view" hidden>
+  <header class="bar">
+    <button class="ghost" onclick="showView('list')">←</button>
+    <h2 id="builder-title">새 컴패니언</h2>
+    <button class="primary" onclick="saveCompanion()">저장</button>
+  </header>
+  <nav class="tabs">
+    <button id="tab-form" class="tab active" onclick="builderTab('form')">설정</button>
+    <button id="tab-preview" class="tab" onclick="builderTab('preview')">미리보기 대화</button>
+  </nav>
+
+  <div id="builder-form" class="pane">
+    <label>이름 <input id="f-name" placeholder="유나"></label>
+    <label>관계
+      <select id="f-template" onchange="applyTemplate()"></select>
+    </label>
+    <p id="f-template-desc" class="hint"></p>
+    <div class="row">
+      <label>나를 부르는 호칭 <input id="f-calls-me" placeholder="오빠"></label>
+      <label>말투
+        <select id="f-speech">
+          <option value="banmal">반말</option>
+          <option value="jondaemal">존댓말</option>
+          <option value="mixed">섞임</option>
+        </select>
+      </label>
+    </div>
+    <label>거리감 <span id="f-intimacy-val" class="hint"></span>
+      <input id="f-intimacy" type="range" min="0" max="100" value="70"
+             oninput="updateIntimacyLabel()">
+    </label>
+    <label>관계 서사 <span id="f-backstory-hint" class="hint"></span>
+      <textarea id="f-backstory" rows="3"></textarea>
+    </label>
+
+    <h3>성격</h3>
+    <div id="f-traits"></div>
+    <label>자유 설정 (성격·배경·좋아하는 것 등)
+      <textarea id="f-description" rows="5"></textarea>
+    </label>
+    <label>말버릇 (한 줄에 하나)
+      <textarea id="f-quirks" rows="3" placeholder="어미에 '~잖아' 자주&#10;놀랄 때 '헐' 남발"></textarea>
+    </label>
+    <label>대화 예시 (말투 학습용 — {{user}}: / {{char}}: 형식)
+      <textarea id="f-examples" rows="5" placeholder="{{user}}: 뭐해?&#10;{{char}}: 방금 일어났잖아... 왜, 보고싶었어?"></textarea>
+    </label>
+    <label>첫 인사
+      <textarea id="f-first" rows="2" placeholder="비워두면 첫 인사 없이 시작"></textarea>
+    </label>
+
+    <h3>목소리</h3>
+    <label>엔진
+      <select id="f-voice-engine" onchange="voiceEngineChanged()">
+        <option value="">없음 (텍스트만)</option>
+        <option value="edge">프리셋 보이스</option>
+        <option value="sovits">보이스 클로닝 (GPT-SoVITS)</option>
+        <option value="elevenlabs">감정 표현 (ElevenLabs)</option>
+      </select>
+    </label>
+    <div id="voice-edge" hidden>
+      <label>보이스 <select id="f-voice-id"></select></label>
+      <div id="voice-model-row" hidden>
+        <label>보이스 모델 (엔진 내 등급 — AI 모델 고르듯이)
+          <select id="f-voice-model">
+            <option value="">기본 (Multilingual v2 — 안정)</option>
+            <option value="eleven_v3">v3 — 감정 표현 최대</option>
+            <option value="eleven_turbo_v2_5">Turbo v2.5 — 균형</option>
+            <option value="eleven_flash_v2_5">Flash v2.5 — 저지연·저가 (통화 추천)</option>
+          </select>
+        </label>
+      </div>
+      <p id="voice-preset-hint" class="hint"></p>
+    </div>
+    <div id="voice-sovits" hidden>
+      <p id="voice-sovits-warn" class="hint"></p>
+      <label>참조 오디오 (3~10초 · 컴패니언 저장 후 업로드)
+        <input type="file" id="f-voice-ref" accept=".wav,.mp3,.m4a,.flac,.ogg">
+      </label>
+      <p id="voice-ref-status" class="hint"></p>
+      <label>참조 오디오 대사 (그 오디오가 말하는 내용)
+        <input id="f-ref-text" placeholder="비워도 되지만 넣으면 품질이 좋아져요">
+      </label>
+    </div>
+    <label>말 속도 <span id="f-voice-speed-val" class="hint">1.00</span>
+      <input id="f-voice-speed" type="range" min="70" max="130" value="100"
+             oninput="$('f-voice-speed-val').textContent=(this.value/100).toFixed(2)">
+    </label>
+    <button class="ghost" onclick="listenPreview()">🔊 미리듣기</button>
+
+    <h3>모델 (고급)</h3>
+    <p class="hint">이 컴패니언의 대화 품질을 결정해요. 비우면 서버 기본값을 따라요. 어떤 모델이든 기억은 동일하게 유지됩니다.</p>
+    <div class="row">
+      <label>LLM
+        <select id="f-model-provider">
+          <option value="">기본 (서버 설정)</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="ollama">Ollama (로컬)</option>
+          <option value="openai">OpenAI 호환</option>
+        </select>
+      </label>
+      <label>모델 이름 <input id="f-model-name" placeholder="비우면 기본 모델"></label>
+    </div>
+  </div>
+
+  <div id="builder-preview" class="pane chat-pane" hidden>
+    <div id="preview-log" class="chat-log"></div>
+    <div class="chat-input">
+      <button class="ghost small" onclick="resetPreview()" title="다시 시작">↺</button>
+      <textarea id="preview-input" rows="1" placeholder="현재 설정으로 시험 대화 (저장·기억 안 됨)"></textarea>
+      <button class="primary" id="preview-send" onclick="sendPreview()">전송</button>
+    </div>
+  </div>
+</section>
+
+<!-- 채팅 -->
+<section id="view-chat" class="view" hidden>
+  <header class="bar">
+    <button class="ghost" onclick="showView('list')">←</button>
+    <h2 id="chat-title"></h2>
+    <button class="ghost" id="chat-call" title="음성 통화" onclick="startCall()">📞</button>
+    <button class="ghost" id="chat-voice-toggle" title="음성 재생" hidden>🔊</button>
+    <button class="ghost" id="chat-memories" title="기억" onclick="openMemories()">🧠</button>
+    <button class="ghost" id="chat-edit" title="편집">✎</button>
+  </header>
+  <div id="chat-log" class="chat-log"></div>
+  <div class="chat-input">
+    <textarea id="chat-input" rows="1" placeholder="메시지"></textarea>
+    <button class="primary" id="chat-send" onclick="sendChat()">전송</button>
+  </div>
+</section>
+
+<!-- 기억 열람·정정 — 컴패니언이 나를 어떻게 기억하는지, 내가 소유하고 고친다 -->
+<section id="view-memories" class="view" hidden>
+  <header class="bar">
+    <button class="ghost" onclick="showView('chat')">←</button>
+    <h2 id="memories-title">기억</h2>
+    <span></span>
+  </header>
+  <p class="hint" style="padding:0 16px">지난 대화에서 만들어진 기억이에요. 틀린 기억은 고치거나 지울 수 있어요 — 다음 대화부터 바로 반영됩니다.</p>
+  <div id="memories-list" class="list"></div>
+</section>
+
+<!-- 음성 통화 오버레이 -->
+<section id="view-call" class="call-overlay" hidden onclick="interruptCall()">
+  <div class="call-top">
+    <span id="call-name"></span>
+    <span id="call-state-label" class="hint"></span>
+  </div>
+  <div id="call-orb" data-state="idle"><div class="orb-core"></div></div>
+  <div class="call-captions">
+    <p id="call-user-caption" class="cap-user"></p>
+    <p id="call-char-caption" class="cap-char"></p>
+  </div>
+  <button class="call-end" onclick="event.stopPropagation(); endCall()">통화 종료</button>
+</section>
+
+<script src="/static/app.js?v=3"></script>
+<script src="/static/call.js?v=4"></script>
+</body>
+</html>
