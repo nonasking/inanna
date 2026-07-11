@@ -156,4 +156,27 @@ button.small { padding: 8px 10px; }
     #view-list .list-actions .primary { flex: none; }
   #view-builder, #view-chat, #view-memories { flex: 1; max-width: 900px; margin: 0; }
   .card.active { background: var(--panel2); box-shadow: inset 3px 0 0 var(--accent); }
+
+  /* 넓은 화면 인체공학 — 말풍선이 화면 전체를 가로지르지 않게,
+     입력·본문은 읽기 좋은 폭으로 */
+  .msg { max-width: 560px; }
+  .chat-log { padding: 16px 24px; gap: 10px; }
+  .chat-input { padding: 12px 24px 16px; }
+  .pane { padding-left: 24px; padding-right: 24px; }
+  .bar { padding-left: 24px; padding-right: 24px; }
+  #memories-list { padding-left: 24px; padding-right: 24px; }
+
+  /* 통화 오버레이 — 데스크톱에선 오브와 자막을 키운다 */
+  #call-orb { width: 200px; height: 200px; }
+  .orb-core { width: 130px; height: 130px; }
+  .call-captions { max-width: 640px; }
+  .cap-char { font-size: 19px; }
+  .cap-user { font-size: 15px; }
+}
+
+/* 짧은 가로 화면(폰 랜드스케이프) — 통화 오버레이가 넘치지 않게 */
+@media (max-height: 480px) {
+  .call-top { margin-top: 2vh; }
+  #call-orb { width: 90px; height: 90px; margin: 2vh 0; }
+  .orb-core { width: 64px; height: 64px; }
 }
