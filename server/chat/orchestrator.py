@@ -40,6 +40,40 @@ def ensure_session(user_id: str, companion: Companion) -> tuple[int, bool]:
     return sid, True
 
 
+REVISIT_GAP_DAYS = 3
+
+def proactive_greeting(user_id: str, companion: Companion, session_id: int,
+                       gap_days: int) -> str | None:
+    """오랜만에 돌아온 사용자에게 컴패니언이 먼저 건네는 인사 (기획 #3).
+
+    실패(쿼터·프로바이더 오류)는 조용히 건너뛴다 — 인사는 보너스지 의무가 아니다.
+    """
+    try:
+        billing.check_chat_quota(user_id)
+        system = compiler.compile_blocks(companion)
+        memories = db.recent_memories(user_id, companion.id, config.MEMORY_RECENT)
+        ctx = ("\n".join(f"- {m}" for m in memories) + "\n\n") if memories else ""
+        seed = [{"role": "user", "content":
+                 f"[컨텍스트 — 상대의 말 아님]\n{ctx}상대가 {gap_days}일 만에 돌아왔다. "
+                 "네가 먼저 반갑게 인사를 건네라 — 관계에 맞는 톤으로, 1~2문장. "
+                 "기억에 있는 것만 언급한다.\n[/컨텍스트]"}]
+        tiered = billing.effective_model(user_id)
+        provider = get_provider(*(tiered or (companion.model.provider, companion.model.name)))
+        provider.last_usage = None
+        text = provider.complete(system, seed, max_tokens=256).strip()
+        if not text:
+            return None
+        text = strip_audio_tags(text)
+        db.add_message(session_id, "assistant", text)
+        if provider.last_usage:
+            db.add_usage(user_id, companion.id, "llm",
+                         provider=provider.name, model=provider.model,
+                         **provider.last_usage)
+        return text
+    except Exception:
+        return None
+
+
 def greeting(companion: Companion, session_id: int) -> str | None:
     """새 세션의 첫 인사 — first_message가 정의돼 있으면 그것을 사용."""
     if not companion.persona.first_message:

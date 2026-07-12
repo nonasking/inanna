@@ -212,3 +212,10 @@ button.small { padding: 8px 10px; }
 
 /* 온보딩 관계 선택 */
 .ob-tpl.active { outline: 2px solid var(--accent); background: var(--panel2); }
+
+/* 시스템의 조용한 안내 (쿼터 등) — 컴패니언 말풍선과 구분 */
+.msg.system {
+  align-self: center; background: transparent; color: var(--dim);
+  border: 1px solid var(--panel2); font-size: 13px; text-align: center;
+}
+.ob-voice.active { outline: 2px solid var(--accent); color: var(--text); }

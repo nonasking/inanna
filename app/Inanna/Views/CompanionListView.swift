@@ -3,9 +3,10 @@ import SwiftUI
 struct CompanionListView: View {
     @EnvironmentObject var app: AppState
     @State private var showOnboard = false
+    @State private var navPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navPath) {
             Group {
                 if app.companions.isEmpty {
                     ContentUnavailableView(
@@ -32,7 +33,9 @@ struct CompanionListView: View {
                 }
             }
             .sheet(isPresented: $showOnboard) {
-                OnboardView()
+                OnboardView { created in
+                    navPath.append(created)  // 첫 만남 직후 바로 대화로 (기획 #8)
+                }
             }
             .refreshable { await app.loadCompanions() }
             .task { await app.loadCompanions() }

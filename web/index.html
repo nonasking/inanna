@@ -10,7 +10,7 @@
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/static/icon-192.png">
-<link rel="stylesheet" href="/static/style.css?v=10">
+<link rel="stylesheet" href="/static/style.css?v=11">
 </head>
 <body>
 
@@ -212,6 +212,8 @@
       </div>
     </div>
     <p class="hint" id="ob-confirm-summary" style="margin-top:12px"></p>
+    <p class="hint" style="margin-top:16px">내 목소리도 골라줄래? <span style="opacity:.7">(듣고 고르거나, 나중에 편집에서)</span></p>
+    <div id="ob-voices" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px"></div>
     <button class="primary" style="width:100%; margin-top:16px" onclick="obComplete()">응, 그런 것 같아 — 시작하기</button>
     <button class="ghost" style="width:100%; margin-top:8px" onclick="obTune()">조금 다듬을게 (세부 설정)</button>
   </div>
@@ -254,7 +256,7 @@
   <button class="call-end" onclick="event.stopPropagation(); endCall()">통화 종료</button>
 </section>
 
-<script src="/static/app.js?v=6"></script>
+<script src="/static/app.js?v=7"></script>
 <script src="/static/call.js?v=5"></script>
 </body>
 </html>

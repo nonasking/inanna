@@ -240,6 +240,18 @@ def history(companion_id: str, limit: int = 50, user: str = Depends(current_user
             greeting = orchestrator.greeting(companion, session_id)
             if greeting:
                 rows = [{"role": "assistant", "content": greeting, "ts": 0}]
+    else:
+        # 재방문 선제 인사 (기획 #3): 오랜만(3일+)의 새 세션이면 먼저 말을 건다
+        import time as _time
+        gap_days = int((_time.time() - rows[-1]["ts"]) // 86400)
+        if gap_days >= orchestrator.REVISIT_GAP_DAYS:
+            session_id, is_new = orchestrator.ensure_session(user, companion)
+            if is_new:
+                hello = orchestrator.proactive_greeting(user, companion,
+                                                        session_id, gap_days)
+                if hello:
+                    rows = rows + [{"role": "assistant", "content": hello,
+                                    "ts": _time.time()}]
     return {"messages": rows}
 
 

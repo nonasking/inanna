@@ -94,7 +94,9 @@ struct APIClient {
                             }
                             if obj["done"] != nil { break }
                             if let err = obj["error"] as? String {
-                                throw APIError.server(status: 500, message: err)
+                                let quota = (obj["kind"] as? String) == "quota"
+                                throw APIError.server(status: quota ? 402 : 500,
+                                                      message: err)
                             }
                         }
                     }

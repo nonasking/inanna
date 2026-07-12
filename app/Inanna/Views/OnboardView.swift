@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 /// 첫 만남 온보딩 — 폼 대신 대화로 컴패니언이 형성된다 (웹과 같은 3단계).
@@ -24,6 +25,10 @@ struct OnboardView: View {
 
     @State private var extracted: OnboardExtract?
     @State private var error: String?
+
+    @State private var voices: [VoiceOption] = []
+    @State private var selectedVoice: String = ""
+    @State private var player: AVAudioPlayer?
 
     var body: some View {
         NavigationStack {
@@ -222,13 +227,62 @@ struct OnboardView: View {
             } footer: {
                 if let error { Text(error).foregroundStyle(.red) }
             }
+            Section {
+                ForEach(voices) { v in
+                    Button {
+                        selectedVoice = v.id
+                        Task { await preview(v.id) }
+                    } label: {
+                        HStack {
+                            Image(systemName: "play.circle")
+                            Text(v.name).foregroundStyle(.primary)
+                            Spacer()
+                            if selectedVoice == v.id {
+                                Image(systemName: "checkmark").foregroundStyle(.tint)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("내 목소리도 골라줄래?")
+            } footer: {
+                Text("듣고 고르거나, 나중에 편집에서 바꿀 수 있어요.")
+            }
             Button("응, 그런 것 같아 — 시작하기") { complete() }
                 .disabled(streaming)
+        }
+        .task {
+            guard let api = app.api, voices.isEmpty else { return }
+            let all = (try? await api.get("api/voices?engine=edge",
+                                          as: [VoiceOption].self)) ?? []
+            voices = all.filter { $0.lang == "ko" }.prefix(3).map { $0 }
+        }
+    }
+
+    private func preview(_ voiceId: String) async {
+        guard let api = app.api else { return }
+        struct Req: Codable {
+            var voice: Companion.Voice
+            var text: String
+        }
+        var v = Companion.Voice()
+        v.engine = "edge"
+        v.voiceId = voiceId
+        let line = String((extracted?.confirm ?? "안녕, 내 목소리 어때?").prefix(80))
+        if let data = try? await api.post("api/tts-preview",
+                                          body: Req(voice: v, text: line)) {
+            player = try? AVAudioPlayer(data: data)
+            player?.play()
         }
     }
 
     private func complete() {
-        guard let api = app.api, let proto else { return }
+        guard let api = app.api, var proto else { return }
+        if !selectedVoice.isEmpty {
+            proto.voice.engine = "edge"
+            proto.voice.voiceId = selectedVoice
+            self.proto = proto
+        }
         streaming = true
         Task {
             defer { streaming = false }

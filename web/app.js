@@ -80,10 +80,10 @@ async function authSubmit() {
 }
 
 /* ---------- 첫 만남 온보딩 ---------- */
-const ob = { proto: null, messages: [], userTurns: 0, extracted: null };
+const ob = { proto: null, messages: [], userTurns: 0, extracted: null, voiceId: "" };
 
 function openOnboard() {
-  ob.proto = null; ob.messages = []; ob.userTurns = 0; ob.extracted = null;
+  ob.proto = null; ob.messages = []; ob.userTurns = 0; ob.extracted = null; ob.voiceId = "";
   $("ob-name").value = ""; $("ob-calls-me").value = "";
   $("ob-log").innerHTML = ""; $("ob-done-row").hidden = true;
   $("ob-step-rel").hidden = false;
@@ -190,11 +190,44 @@ async function obFinish() {
   $("ob-confirm-line").textContent = x.confirm || "나 이런 느낌인 것 같아. 맞지?";
   const traits = Object.entries(x.traits || {})
     .filter(([, v]) => v >= 0.6).map(([k]) => k).join(" · ");
+  obLoadVoices();
   $("ob-confirm-summary").textContent =
     (traits ? `성격: ${traits}` : "") + (x.description ? ` — ${x.description}` : "");
 }
 
+async function obLoadVoices() {
+  // 무료 프리셋 3종 — 확인 대사를 그 목소리로 미리 들어보고 고른다
+  const el = $("ob-voices");
+  el.innerHTML = "";
+  let voices = [];
+  try { voices = await (await api("/api/voices?engine=edge")).json(); } catch {}
+  for (const v of voices.filter(v => v.lang === "ko").slice(0, 3)) {
+    const btn = document.createElement("button");
+    btn.className = "ghost ob-voice";
+    btn.textContent = `▶ ${v.name}`;
+    btn.onclick = async () => {
+      for (const b of el.children) b.classList.remove("active");
+      btn.classList.add("active");
+      ob.voiceId = v.id;
+      try {
+        const r = await api("/api/tts-preview", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            voice: { engine: "edge", voice_id: v.id, ref_text: "", speed: 1.0 },
+            text: ($("ob-confirm-line").textContent || "").slice(0, 80),
+          }),
+        });
+        if (r.ok) playAudioBlob(await r.blob());
+      } catch {}
+    };
+    el.appendChild(btn);
+  }
+}
+
 async function obComplete() {
+  if (ob.voiceId) {
+    ob.proto.voice = { engine: "edge", voice_id: ob.voiceId, ref_text: "", speed: 1.0 };
+  }
   const r = await api("/api/onboard/complete", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ companion: ob.proto, messages: ob.messages,
@@ -609,7 +642,13 @@ async function streamPost(url, body, onDelta) {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(await r.text());
+  if (!r.ok) {
+    // 서버의 사람 문구(detail)만 표시 — raw JSON이 관계에 난입하지 않게 (기획 #1)
+    const body = await r.json().catch(() => null);
+    const err = new Error((body && body.detail) || "요청이 잘 되지 않았어요. 잠시 후 다시 시도해주세요.");
+    err.quota = r.status === 402;
+    throw err;
+  }
   const reader = r.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
@@ -623,7 +662,11 @@ async function streamPost(url, body, onDelta) {
       buf = buf.slice(idx + 2);
       if (!frame.startsWith("data: ")) continue;
       const data = JSON.parse(frame.slice(6));
-      if (data.error) throw new Error(data.error);
+      if (data.error) {
+        const err = new Error(data.error);
+        err.quota = data.kind === "quota";
+        throw err;
+      }
       if (data.delta) onDelta(data.delta);
       if (data.done) return;
     }
@@ -652,8 +695,9 @@ async function runStream(logEl, url, body) {
       logEl.scrollTop = logEl.scrollHeight;
     });
   } catch (err) {
-    bubble.className = "msg error";
-    bubble.textContent = "오류: " + err.message;
+    // 쿼터·오류는 컴패니언이 아니라 '시스템의 조용한 안내'로 (기획 #1)
+    bubble.className = err.quota ? "msg system" : "msg error";
+    bubble.textContent = err.message;
   } finally {
     busy = false;
   }

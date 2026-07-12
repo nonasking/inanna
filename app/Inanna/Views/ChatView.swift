@@ -95,7 +95,12 @@ struct ChatView: View {
                     messages[messages.count - 1] = reply
                 }
             } catch {
-                messages.append(ChatMessage(role: "error", content: error.localizedDescription))
+                // 쿼터는 컴패니언이 아니라 시스템의 조용한 안내로 (기획 #1)
+                var role = "error"
+                if case APIError.server(let status, _) = error, status == 402 {
+                    role = "system"
+                }
+                messages.append(ChatMessage(role: role, content: error.localizedDescription))
             }
         }
     }
@@ -107,12 +112,20 @@ private struct Bubble: View {
     var body: some View {
         HStack {
             if message.role == "user" { Spacer(minLength: 48) }
+            if message.role == "system" { Spacer(minLength: 24) }
             Text(message.content.isEmpty ? "…" : message.content)
+                .font(message.role == "system" ? .caption : .body)
                 .padding(.horizontal, 13)
                 .padding(.vertical, 9)
                 .background(background, in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(message.role == "error" ? .red : .primary)
+                .overlay(message.role == "system"
+                         ? RoundedRectangle(cornerRadius: 14)
+                             .stroke(Color(white: 0.25), lineWidth: 1)
+                         : nil)
+                .foregroundStyle(message.role == "error" ? .red
+                                 : message.role == "system" ? .secondary : .primary)
             if message.role != "user" { Spacer(minLength: 48) }
+            if message.role == "system" { Spacer(minLength: 24) }
         }
         .id(message.id)
     }
@@ -121,6 +134,7 @@ private struct Bubble: View {
         switch message.role {
         case "user": return Color(red: 0.23, green: 0.18, blue: 0.36)
         case "error": return Color(red: 0.29, green: 0.13, blue: 0.19)
+        case "system": return .clear
         default: return Color(white: 0.13)
         }
     }
