@@ -1,8 +1,10 @@
 """에너지 기반 발화 감지 (조용한 실내 1:1 통화 가정).
 
 접속 직후 노이즈 플로어를 캘리브레이션하고, RMS가 플로어의 배수를 넘는
-구간을 발화로 본다. half-duplex라 유나가 말하는 동안은 feed 자체가 오지
-않으므로 에코는 고려하지 않는다. (barge-in 승격 시 webrtcvad류로 교체 검토)
+구간을 발화로 본다. 기본 감지기는 청취(idle/listening) 구간용이고,
+재생 중 끼어들기(barge-in)는 make_barge_detector()의 보수적 파라미터
+(높은 임계값 + 긴 지속 요구)로 에코·잡음 오탐을 걸러낸다 — 1차 방어는
+클라이언트 AEC(웹 echoCancellation / iOS voiceChat).
 """
 import math
 import struct
@@ -49,6 +51,16 @@ class UtteranceDetector:
         # 발화 중 유성(有聲) 프레임 누적 카운터 — reset해도 유지되는 단조 증가값.
         # 투기적 STT가 "그 멈춤 이후 새 말이 없었는지"를 이 값 비교로 판정한다.
         self.voiced_total = 0
+
+    def make_barge_detector(self) -> "UtteranceDetector":
+        """재생 중 끼어들기 감지용 파생 감지기 — 캘리브레이션을 물려받되
+        시작 판정만 훨씬 보수적으로 (에코가 AEC를 뚫고 남긴 잔향 무시)."""
+        d = UtteranceDetector(start_ratio=self._start_ratio * 1.6,
+                              min_start_rms=self._min_start_rms * 2.0,
+                              start_ms=300)
+        d._calib = [0.0] * self._calib_frames   # 캘리브레이션 건너뛰기
+        d._floor = self._floor
+        return d
 
     @property
     def pause_ms(self) -> int:

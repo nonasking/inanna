@@ -2,7 +2,9 @@
 
 프로토콜 스펙: docs/voice-protocol.md (P4 네이티브 앱이 재사용하는 계약)
 상태: idle → listening → thinking → speaking → idle (서버 권위)
-half-duplex: thinking/speaking 중 수신 오디오는 폐기한다 (클라이언트도 송신 중단).
+barge-in: thinking/speaking 중 수신 오디오는 보수적 감지기(에코 오탐 방지)로
+판정해, 지속적 발화면 턴을 자동 취소하고 그 발화를 이어서 인식한다.
+탭 인터럽트(interrupt 이벤트)도 그대로 동작한다.
 """
 import asyncio
 import json
@@ -69,6 +71,8 @@ class VoiceSession:
         self._diag_dropped = 0
         # playback_end 유실(클라 디코드 실패 등)로 speaking에 고착되는 것 방지
         self._speak_watchdog: asyncio.Task | None = None
+        # barge-in — thinking/speaking 중에만 살아있는 보수적 발화 감지기
+        self._barge: UtteranceDetector | None = None
         # 투기적 STT — 발화 중 침묵이 시작되면 종료 확정(end_ms) 전에 미리
         # 인식을 돌려, 침묵 대기와 STT를 겹친다 (응답 지연 단축)
         self._spec_task: asyncio.Task | None = None
@@ -134,9 +138,12 @@ class VoiceSession:
             self._diag_rms_sum = 0.0
 
     async def _on_audio(self, chunk: bytes) -> None:
+        if self.state in ("thinking", "speaking"):
+            await self._on_barge_audio(chunk)
+            return
         if self.state not in ("idle", "listening"):
             self._diag(chunk, dropped=True)
-            return  # half-duplex 서버측 게이트
+            return
         self._diag(chunk, dropped=False)
         utterance = self.detector.feed(chunk)
         if self.detector.speaking and self.state == "idle":
@@ -154,9 +161,29 @@ class VoiceSession:
             spec.cancel()  # 멈춤 뒤에 말이 이어졌다 — 무효
             spec = None
         # 상태 전환을 태스크 시작 전에 동기적으로 — 안 그러면 태스크가 뜨기 전
-        # 도착한 청크가 VAD로 들어가 발화가 쪼개진다 (half-duplex 게이트 무력화)
+        # 도착한 청크가 VAD로 들어가 발화가 쪼개진다 (barge 게이트 무력화)
         await self.set_state("thinking")
+        # 이번 턴의 barge-in 감지기 — 재생 에코를 뚫는 지속 발화만 잡는다
+        self._barge = self.detector.make_barge_detector()
         self.turn_task = asyncio.create_task(self._handle_utterance(utterance, spec))
+
+    async def _on_barge_audio(self, chunk: bytes) -> None:
+        """thinking/speaking 중 수신 오디오 — 끼어들기 판정.
+
+        보수적 감지기가 지속 발화를 확인하면 진행 중인 턴을 취소하고,
+        그 감지기를 본 감지기로 승격해 끼어든 첫 마디를 잃지 않는다.
+        """
+        self._diag(chunk, dropped=False)
+        if self._barge is None:
+            return
+        self._barge.feed(chunk)
+        if self._barge.speaking:
+            print(f"[voice {self.companion.id}] barge-in — 재생 중 발화 감지, 턴 취소",
+                  flush=True)
+            barge, self._barge = self._barge, None
+            await self._cancel_turn(notify=True)
+            self.detector = barge
+            await self.set_state("listening")
 
     def _maybe_spec_stt(self) -> None:
         d = self.detector
@@ -202,6 +229,7 @@ class VoiceSession:
 
     async def _cancel_turn(self, notify: bool) -> None:
         self._disarm_watchdog()
+        self._barge = None
         if self._spec_task and not self._spec_task.done():
             self._spec_task.cancel()
         self._spec_task = None

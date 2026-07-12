@@ -13,7 +13,7 @@ struct CallView: View {
         case "idle": return "듣고 있어요"
         case "listening": return "듣는 중…"
         case "thinking": return "생각 중…"
-        case "speaking": return "말하는 중 — 탭하면 끼어들 수 있어요"
+        case "speaking": return "말하는 중 — 말하거나 탭하면 끼어들 수 있어요"
         default: return ""
         }
     }

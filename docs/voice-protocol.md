@@ -55,8 +55,12 @@ idle ──(VAD 발화 시작)──▶ listening ──(VAD 종료)──▶ th
  └──────────(interrupt → interrupted)── thinking/speaking 어디서든
 ```
 
-- **half-duplex**: 클라이언트는 `thinking`/`speaking` 동안 마이크 프레임을 보내지 않는다(1차).
-  서버도 해당 상태의 수신 프레임을 폐기한다(2차). 오디오가 없는 턴은 `turn_end` 후 바로 idle.
+- **barge-in** (2026-07-12, half-duplex에서 승격): 클라이언트는 모든 활성 상태에서
+  마이크 프레임을 계속 보낸다 (AEC 필수 — 웹 `echoCancellation`, iOS `.voiceChat`).
+  서버는 `thinking`/`speaking` 중 수신 프레임을 보수적 감지기(임계 ×1.6, 지속 300ms)로
+  판정하고, 끼어들기 확정 시 `interrupted`를 보내고 그 발화를 이어서 인식한다.
+  클라이언트는 `interrupted` 수신 즉시 재생을 중단해야 한다 (탭 인터럽트와 동일 경로).
+  오디오가 없는 턴은 `turn_end` 후 바로 idle.
 - **barge-in 승격 경로**(P2.5+): "speaking 중 바이너리 허용 + 서버 VAD 감지 시 자동 interrupt"만
   추가하면 되며 메시지 스키마 변경은 없다.
 

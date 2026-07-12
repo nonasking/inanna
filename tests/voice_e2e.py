@@ -51,7 +51,9 @@ async def connect(url, token):
 
 async def scenario_normal(url, token, db_path):
     print("── ① 정상 루프")
-    pcm = make_pcm("유나야 안녕. 오늘 하루 어땠는지 짧게 말해줄래?")
+    # 쉼표로 잇는 한 문장 — 마침표의 긴 쉼(>1s)은 턴을 끊고, 이어지는 문장은
+    # barge-in으로 승격되어 별개 발화가 된다 (실사용에선 자연스러운 동작)
+    pcm = make_pcm("유나야 안녕, 오늘 하루 어땠는지 짧게 말해 줄래?")
     ws, ready = await connect(url, token)
     print(f"  ready: session={ready['session_id']} engine={ready['voice_engine']}")
 
@@ -104,6 +106,39 @@ async def scenario_normal(url, token, db_path):
     assert roles == {"user", "assistant"}, rows
     print(f"  ✅ user/assistant 저장 확인: {rows[1][1][:30]!r} → {rows[0][1][:30]!r}")
     return latency
+
+
+async def scenario_barge_in(url, token):
+    print("── ③b barge-in (재생 중 말로 끼어들기)")
+    pcm = make_pcm("유나야 네가 좋아하는 게임 이야기를 아주 길게 자세히 들려줘.")
+    barge = make_pcm("잠깐만 유나야, 그 얘기 말고 다른 얘기 하자.")
+    ws, _ = await connect(url, token)
+    await send_pcm(ws, SILENCE_1S)
+    await send_pcm(ws, pcm)
+    await send_pcm(ws, SILENCE_1S)
+
+    interrupted, barge_sent, barge_stt = False, False, None
+    deadline = time.monotonic() + 120
+    while time.monotonic() < deadline:
+        msg = await asyncio.wait_for(ws.recv(), timeout=120)
+        if isinstance(msg, bytes):
+            if not barge_sent:  # 첫 오디오 = 재생 시작 → 그 위에 대고 말한다
+                barge_sent = True
+                await send_pcm(ws, barge, realtime=True)
+                await send_pcm(ws, SILENCE_1S, realtime=True)
+            continue
+        ev = json.loads(msg)
+        if ev["type"] == "error":
+            print(f"  ERROR: {ev['message']}"); sys.exit(1)
+        if ev["type"] == "interrupted":
+            interrupted = True
+        elif ev["type"] == "stt" and interrupted:
+            barge_stt = ev["text"]
+            break
+    assert interrupted, "재생 중 지속 발화가 interrupted를 트리거해야 함"
+    assert barge_stt, "끼어든 발화가 이어서 인식돼야 함"
+    print(f"  ✅ 재생 중 발화 → 자동 인터럽트 + 이어서 인식: {barge_stt!r}")
+    await ws.close()
 
 
 async def scenario_interrupt(url, token):
@@ -191,6 +226,7 @@ async def main():
 
     latency = await scenario_normal(url, args.token, args.db)
     await scenario_interrupt(url, args.token)
+    await scenario_barge_in(url, args.token)
     await scenario_silence(url, args.token)
     if args.token:
         await scenario_auth(url)

@@ -79,7 +79,8 @@ final class CallEngine: NSObject, ObservableObject {
 
     private nonisolated func handleCapture(_ buffer: AVAudioPCMBuffer) {
         Task { @MainActor in
-            guard self.state == "idle" || self.state == "listening",
+            // barge-in: 재생 중에도 송신 — 서버가 에코를 걸러 끼어들기 판정
+            guard self.state != "connecting", self.state != "ended",
                   let converter = self.converter else { return }
             let ratio = 16000.0 / buffer.format.sampleRate
             let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio + 16)

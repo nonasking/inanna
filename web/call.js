@@ -1,5 +1,5 @@
 /* 실시간 음성 통화 클라이언트 — 프로토콜: docs/voice-protocol.md
-   half-duplex: speaking/thinking 동안 마이크 프레임을 보내지 않는다(서버도 무시). */
+   barge-in: 마이크는 항상 송신, 서버가 재생 중 지속 발화만 끼어들기로 판정한다. */
 
 const call = {
   ws: null, ctx: null, node: null, stream: null,
@@ -10,7 +10,7 @@ const call = {
 
 const STATE_LABEL = {
   idle: "듣고 있어요", listening: "듣는 중…",
-  thinking: "생각 중…", speaking: "말하는 중 — 탭하면 끼어들 수 있어요",
+  thinking: "생각 중…", speaking: "말하는 중 — 말하거나 탭하면 끼어들 수 있어요",
 };
 
 async function startCall() {
@@ -38,8 +38,9 @@ async function startCall() {
   call.node = new AudioWorkletNode(call.ctx, "pcm16k");
   source.connect(call.node);
   call.node.port.onmessage = (e) => {
-    if (call.ws && call.ws.readyState === 1 &&
-        (call.state === "idle" || call.state === "listening")) {
+    // barge-in: 재생 중에도 계속 송신 — 서버가 보수적 감지기로 에코를 걸러
+    // 지속 발화만 끼어들기로 승격한다 (1차 방어는 echoCancellation)
+    if (call.ws && call.ws.readyState === 1) {
       call.ws.send(e.data);
     }
   };

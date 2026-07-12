@@ -105,6 +105,15 @@ def test_vad():
     for _ in range(55):            # 1000ms 침묵 → 종료
         utt = d.feed(frame(30)) or utt
     assert utt is not None
+    # barge 감지기 — 캘리브레이션 상속 + 보수적 임계값
+    barge = d.make_barge_detector()
+    assert barge.start_threshold > d.start_threshold * 1.4
+    for _ in range(10):
+        barge.feed(frame(2500))    # 200ms — 지속 요건(300ms) 미달
+    assert not barge.speaking, "짧은 소리에 끼어들면 안 됨"
+    for _ in range(10):
+        barge.feed(frame(2500))    # 누적 400ms — 지속 발화
+    assert barge.speaking, "지속 발화는 끼어들기로 감지돼야 함"
 
 
 def test_memory_crud():
