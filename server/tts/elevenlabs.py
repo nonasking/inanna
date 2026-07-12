@@ -47,8 +47,10 @@ class ElevenLabsEngine:
     def voices(self) -> list[dict]:
         if not config.ELEVENLABS_API_KEY:
             return []
+        # 커스텀 보이스(목록 API 미노출)를 맨 앞에 — .env INANNA_ELEVENLABS_EXTRA_VOICES
+        extra = config.ELEVENLABS_EXTRA_VOICES
         if self._voices_cache and time.time() - self._voices_at < 300:
-            return self._voices_cache
+            return extra + self._voices_cache
         try:
             r = httpx.get(f"{BASE}/voices", headers=self._headers(),
                           timeout=httpx.Timeout(10, connect=3))
@@ -60,8 +62,8 @@ class ElevenLabsEngine:
             ]
             self._voices_at = time.time()
         except Exception:
-            return self._voices_cache or []
-        return self._voices_cache
+            return extra + (self._voices_cache or [])
+        return extra + self._voices_cache
 
     async def synthesize(self, text: str, voice: Voice,
                          prev_text: str = "") -> tuple[bytes, str]:

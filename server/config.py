@@ -67,6 +67,15 @@ WHISPER_URL = os.environ.get("INANNA_WHISPER_URL", "http://127.0.0.1:9881")
 ELEVENLABS_API_KEY = os.environ.get("INANNA_ELEVENLABS_API_KEY",
                                     os.environ.get("ELEVENLABS_API_KEY", ""))
 ELEVENLABS_MODEL = os.environ.get("INANNA_ELEVENLABS_MODEL", "eleven_multilingual_v2")
+# 목록 API에 안 나오는 커스텀 보이스를 픽커에 추가 — "id:이름,id:이름" 형식
+# (Voice Design 등으로 만든 보이스는 /v1/voices에 안 잡히는 경우가 있다)
+ELEVENLABS_EXTRA_VOICES = [
+    {"id": pair.split(":")[0].strip(),
+     "name": (pair.split(":", 1)[1].strip() if ":" in pair else pair.strip()),
+     "gender": "", "lang": "multi"}
+    for pair in os.environ.get("INANNA_ELEVENLABS_EXTRA_VOICES", "").split(",")
+    if pair.strip()
+]
 
 COMPANIONS_DIR.mkdir(parents=True, exist_ok=True)
 VOICES_DIR.mkdir(parents=True, exist_ok=True)
