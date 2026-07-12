@@ -4,13 +4,25 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>AppIcon60x60@2x.png</key>
+		<data>
+		6t+tK3WhbUZLoxixPseKLxKOC1g=
+		</data>
+		<key>AppIcon76x76@2x~ipad.png</key>
+		<data>
+		EzSzGkpZdDhm16TboGgWL1kqzy0=
+		</data>
+		<key>Assets.car</key>
+		<data>
+		bvxKfxIKIZZDnanGa+e4gHAuozI=
+		</data>
 		<key>Inanna.debug.dylib</key>
 		<data>
-		5bp285CAIZ1sXb+Y/uNuaphJ78Y=
+		eg5Hlml7JxjXROKFx9+NCdaKOhE=
 		</data>
 		<key>Info.plist</key>
 		<data>
-		UrmVRkHbmsKy0OXnhvWlnhoOF/s=
+		VTzjjpooDrryRWuDKIkJEf8GljQ=
 		</data>
 		<key>PkgInfo</key>
 		<data>
@@ -18,23 +30,44 @@
 		</data>
 		<key>__preview.dylib</key>
 		<data>
-		e1r2EvzbG8eqgm16mAC1yHbaQEA=
+		n1CPhZHhV7aq646DdMwRh59CajE=
 		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>AppIcon60x60@2x.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			torc9a2VK0EOfJgqdqoU6DZhDQg+pWdG5/InZ9eiKWY=
+			</data>
+		</dict>
+		<key>AppIcon76x76@2x~ipad.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			elBqOYTrclA2ehpNi0FS4E56M6nYUCENS1E07St+x0w=
+			</data>
+		</dict>
+		<key>Assets.car</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			kQtAqPRUHT6/+InqaS59gKZJuiMXiomHRWXNgiUljoU=
+			</data>
+		</dict>
 		<key>Inanna.debug.dylib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Wzcb66BEbkrCvEjmBG3eHLTBYbueEgCGUEvZbexBENM=
+			ZOjqtsAMbtZ5Gr6S7bpCS07wnNK2TUA5WXK2XdXup2Y=
 			</data>
 		</dict>
 		<key>__preview.dylib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			6BAwlJG2ORcfx/PiK6NQ4mFzEC8T2JvvexCTk8r82hM=
+			6WhcWk45NGPRifhhUOQ8lTL/2LzxlI3CqCrmMKZ3M7E=
 			</data>
 		</dict>
 	</dict>

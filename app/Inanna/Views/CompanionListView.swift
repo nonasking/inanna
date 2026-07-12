@@ -37,8 +37,16 @@ struct CompanionListView: View {
     private func row(_ c: Companion) -> some View {
         HStack(spacing: 12) {
             ZStack {
-                Circle().fill(.tint.opacity(0.35))
-                Text(String(c.name.prefix(1))).font(.headline)
+                // 통화 오브와 같은 시각 언어 — 발광 구체 아바타
+                Circle().fill(RadialGradient(
+                    colors: [Color(red: 0.80, green: 0.69, blue: 1.0),
+                             Color(red: 0.42, green: 0.30, blue: 0.68)],
+                    center: .init(x: 0.38, y: 0.32), startRadius: 2, endRadius: 34))
+                    .shadow(color: Color(red: 0.71, green: 0.55, blue: 0.95).opacity(0.35),
+                            radius: 6)
+                Text(String(c.name.prefix(1)))
+                    .font(.headline)
+                    .foregroundStyle(.white)
             }
             .frame(width: 44, height: 44)
             VStack(alignment: .leading) {
