@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CompanionListView: View {
     @EnvironmentObject var app: AppState
+    @State private var showOnboard = false
 
     var body: some View {
         NavigationStack {
@@ -23,11 +24,15 @@ struct CompanionListView: View {
             .navigationTitle("Inanna")
             .navigationDestination(for: Companion.self) { ChatView(companion: $0) }
             .toolbar {
+                Button { showOnboard = true } label: { Image(systemName: "plus") }
                 Menu {
                     Button("로그아웃", role: .destructive) { app.signOut() }
                 } label: {
                     Image(systemName: "person.circle")
                 }
+            }
+            .sheet(isPresented: $showOnboard) {
+                OnboardView()
             }
             .refreshable { await app.loadCompanions() }
             .task { await app.loadCompanions() }

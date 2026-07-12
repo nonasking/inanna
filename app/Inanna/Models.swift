@@ -69,6 +69,47 @@ struct Companion: Codable, Identifiable, Hashable {
     }
 }
 
+struct RelTemplate: Codable, Identifiable, Hashable {
+    var id: String
+    var name: String
+    var description: String?
+}
+
+// 온보딩 — /api/onboard/{chat,extract,complete} 요청·응답
+struct OnboardPayload: Codable {
+    var companion: Companion
+    var messages: [Turn]
+    var firstMemory: String = ""
+
+    struct Turn: Codable {
+        var role: String
+        var content: String
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case companion, messages
+        case firstMemory = "first_memory"
+    }
+}
+
+struct OnboardExtract: Codable {
+    var traits: [String: Double]
+    var speechQuirks: [String]
+    var description: String
+    var callsMe: String
+    var speechLevel: String
+    var confirm: String
+    var firstMemory: String
+
+    enum CodingKeys: String, CodingKey {
+        case traits, description, confirm
+        case speechQuirks = "speech_quirks"
+        case callsMe = "calls_me"
+        case speechLevel = "speech_level"
+        case firstMemory = "first_memory"
+    }
+}
+
 struct VoiceOption: Codable, Identifiable, Hashable {
     var id: String
     var name: String
