@@ -16,17 +16,33 @@ from .companion.schema import Companion, Voice
 from .llm import get_provider
 from .memory import db
 
+# 페일클로즈(보안 M3): 초대제(=외부 노출 의도)인데 오너 토큰이 비어 있으면
+# 익명 요청이 오너('local')로 폴백해 전 API가 조용히 열린다 — 기동을 거부한다.
+if config.INVITE_CODES and not config.AUTH_TOKEN:
+    raise RuntimeError(
+        "INANNA_INVITE_CODES가 설정됐는데 INANNA_AUTH_TOKEN이 비어 있습니다. "
+        "외부 노출 구성에서는 오너 토큰이 필수입니다 (.env 확인).")
+
 app = FastAPI(title="Inanna")
 db.init()
 
 
 @app.middleware("http")
 async def static_no_cache(request, call_next):
-    """폰 브라우저(PWA)가 옛 JS를 캐시해 신구 코드가 섞이는 사고 방지.
-    no-cache = 매번 재검증 (ETag 304라 비용은 미미)."""
+    """폰 브라우저(PWA)가 옛 JS를 캐시해 신구 코드가 섞이는 사고 방지 +
+    기본 보안 헤더(클릭재킹·MIME 스니핑 차단, 최소 CSP)."""
     response = await call_next(request)
     if request.url.path.startswith("/static") or request.url.path == "/":
         response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    # inline 핸들러(onclick=)를 쓰는 현 구조라 unsafe-inline 허용 —
+    # 외부 출처 로드는 전부 차단된다
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "connect-src 'self' ws: wss:; frame-ancestors 'none'")
     return response
 
 
@@ -54,15 +70,23 @@ def current_user(authorization: str | None = Header(None)) -> str:
 _auth_hits: dict[str, list[float]] = {}
 
 
-def _rate_limit(request, limit: int = 20, window: float = 600.0) -> None:
+def _rate_limit(request, limit: int = 20, window: float = 600.0,
+                key: str = "") -> None:
     import time as _time
-    ip = (request.client.host if request.client else "?")
+    bucket = key or (request.client.host if request.client else "?")
     now = _time.time()
-    hits = [t for t in _auth_hits.get(ip, []) if now - t < window]
+    hits = [t for t in _auth_hits.get(bucket, []) if now - t < window]
     if len(hits) >= limit:
         raise HTTPException(429, "요청이 너무 많아요. 잠시 후 다시 시도해주세요.")
     hits.append(now)
-    _auth_hits[ip] = hits
+    _auth_hits[bucket] = hits
+
+
+def _llm_rate_limit(request, user: str) -> None:
+    """LLM을 태우는 경로 공통 — 계정(과금) 유저만, 유저 단위 분당 상한.
+    쿼터(총량)와 별개로 순간 폭주를 막는다 (보안 H1)."""
+    if billing.is_metered(user):
+        _rate_limit(request, limit=20, window=60.0, key=f"llm:{user}")
 
 
 class Credentials(BaseModel):
@@ -177,14 +201,20 @@ def _sse(gen):
             for delta in gen:
                 yield f"data: {json.dumps({'delta': delta}, ensure_ascii=False)}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
+        except billing.QuotaExceeded as e:
+            yield f"data: {json.dumps({'error': str(e), 'kind': 'quota'}, ensure_ascii=False)}\n\n"
         except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+            # 내부 예외 원문은 서버 로그에만 — 클라이언트엔 일반 문구 (보안 L6)
+            print(f"[sse error] {type(e).__name__}: {e}", flush=True)
+            yield f"data: {json.dumps({'error': '잠시 연결이 고르지 않았어요. 다시 한 번 말해줄래요?'}, ensure_ascii=False)}\n\n"
     return StreamingResponse(event_stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.post("/api/chat/{companion_id}")
-def chat(companion_id: str, req: ChatRequest, user: str = Depends(current_user)):
+def chat(companion_id: str, req: ChatRequest, request: Request,
+         user: str = Depends(current_user)):
+    _llm_rate_limit(request, user)
     try:
         companion = store.load(user, companion_id)
     except FileNotFoundError:
@@ -222,15 +252,21 @@ class OnboardRequest(BaseModel):
 
 
 @app.post("/api/onboard/chat")
-def onboard_chat(req: OnboardRequest, user: str = Depends(current_user)):
+def onboard_chat(req: OnboardRequest, request: Request,
+                 user: str = Depends(current_user)):
     """첫 만남 대화 스트림 — 무저장, 완료 시 complete가 기록한다."""
-    return _sse(onboard.onboard_stream(req.companion, req.messages))
+    _llm_rate_limit(request, user)
+    return _sse(onboard.onboard_stream(user, req.companion, req.messages))
 
 
 @app.post("/api/onboard/extract")
-def onboard_extract(req: OnboardRequest, user: str = Depends(current_user)):
+def onboard_extract(req: OnboardRequest, request: Request,
+                    user: str = Depends(current_user)):
+    _llm_rate_limit(request, user)
     try:
-        return onboard.extract(req.companion, req.messages)
+        return onboard.extract(user, req.companion, req.messages)
+    except billing.QuotaExceeded as e:
+        raise HTTPException(402, str(e))
     except Exception:
         raise HTTPException(502, "대화에서 성격을 정리하지 못했어요. 한 번 더 시도해주세요.")
 
@@ -247,8 +283,10 @@ class PreviewRequest(BaseModel):
 
 
 @app.post("/api/preview")
-def preview(req: PreviewRequest, user: str = Depends(current_user)):
-    return _sse(orchestrator.preview_stream(req.companion, req.messages))
+def preview(req: PreviewRequest, request: Request,
+            user: str = Depends(current_user)):
+    _llm_rate_limit(request, user)
+    return _sse(orchestrator.preview_stream(user, req.companion, req.messages))
 
 
 @app.get("/api/config")
@@ -298,8 +336,9 @@ class TTSRequest(BaseModel):
 
 
 @app.post("/api/tts/{companion_id}")
-async def synthesize(companion_id: str, req: TTSRequest,
+async def synthesize(companion_id: str, req: TTSRequest, request: Request,
                      user: str = Depends(current_user)):
+    _llm_rate_limit(request, user)
     try:
         companion = store.load(user, companion_id)
     except FileNotFoundError:

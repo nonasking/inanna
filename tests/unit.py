@@ -205,6 +205,46 @@ def test_bond():
     assert b2 > b1 and b2 < 1.0, "대화가 쌓이면 증가, 1 미만 유지"
 
 
+def test_h1_gates():
+    """H1 — preview/onboard가 쿼터·티어를 우회하지 못한다."""
+    import time as _t
+    from server import auth, billing
+    from server.chat import onboard, orchestrator
+    from server.memory import db
+    db.init()
+    token = auth.register("h1@inanna.test", "password123")
+    uid = auth.resolve_token(token)
+    c = make_companion("friend", "banmal")
+    c.model.provider, c.model.name = "anthropic", "claude-opus-4-8"  # 본문 조작 시도
+    # 쿼터 소진 상태에서 preview/onboard가 QuotaExceeded를 던지는지
+    billing.set_tier(uid, "beta")
+    db.add_usage(uid, "c1", "llm",
+                 output_tokens=billing.TIERS["beta"]["daily_output_tokens"])
+    for gen in (orchestrator.preview_stream(uid, c, [{"role": "user", "content": "hi"}]),
+                onboard.onboard_stream(uid, c, [])):
+        try:
+            next(gen)
+            raise AssertionError("쿼터 소진인데 스트림이 시작됨")
+        except billing.QuotaExceeded:
+            pass
+    try:
+        onboard.extract(uid, c, [{"role": "user", "content": "hi"}])
+        raise AssertionError("extract가 쿼터를 우회함")
+    except billing.QuotaExceeded:
+        pass
+    # 티어 모델 강제 — 본문의 opus 지정이 무시되는지 (프로바이더 선택 로직 확인)
+    assert billing.effective_model(uid) == ("anthropic", billing.TIERS["beta"]["model"])
+    # 토큰 TTL (M2) — 만료 토큰은 무효+삭제
+    with db.conn() as con:
+        con.execute("UPDATE auth_tokens SET created_at = ? WHERE token = ?",
+                    (_t.time() - auth.TOKEN_TTL - 10, token))
+    assert auth.resolve_token(token) is None, "만료 토큰이 살아있음"
+    with db.conn() as con:
+        assert con.execute("SELECT 1 FROM auth_tokens WHERE token = ?",
+                           (token,)).fetchone() is None, "만료 토큰 미삭제"
+    auth.delete_account(uid)
+
+
 def test_growth_arc():
     from server.chat import relationship
     from server.companion.schema import Companion
@@ -283,6 +323,7 @@ if __name__ == "__main__":
     check("기억 CRUD·사용량", test_memory_crud)
     check("계정 인증 (가입·로그인·삭제)", test_auth)
     check("과금 티어·쿼터", test_billing)
+    check("H1 게이트·토큰 TTL", test_h1_gates)
     check("관계 성장 아크", test_growth_arc)
     check("유대감(bond) 곡선", test_bond)
     if FAILURES:

@@ -79,14 +79,20 @@ def logout(token: str) -> None:
         c.execute("DELETE FROM auth_tokens WHERE token = ?", (token,))
 
 
+TOKEN_TTL = 30 * 86400  # 세션 토큰 수명 30일 (보안 M2 — 영구 토큰 방지)
+
+
 def resolve_token(token: str) -> str | None:
-    """세션 토큰 → user_id ('u<account_id>'). 없으면 None."""
+    """세션 토큰 → user_id ('u<account_id>'). 없거나 만료면 None."""
     if not token:
         return None
     with db.conn() as c:
-        row = c.execute("SELECT account_id FROM auth_tokens WHERE token = ?",
+        row = c.execute("SELECT account_id, created_at FROM auth_tokens WHERE token = ?",
                         (token,)).fetchone()
         if not row:
+            return None
+        if time.time() - row["created_at"] > TOKEN_TTL:
+            c.execute("DELETE FROM auth_tokens WHERE token = ?", (token,))
             return None
         c.execute("UPDATE auth_tokens SET last_used = ? WHERE token = ?",
                   (time.time(), token))

@@ -109,8 +109,14 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
                      **provider.last_usage)
 
 
-def preview_stream(companion: Companion, messages: list[dict]) -> Iterator[str]:
-    """빌더 미리보기 — 저장/기억 없이 현재 설정으로만 응답. (요건 P0 '미리보기 대화')"""
+def preview_stream(user_id: str, companion: Companion,
+                   messages: list[dict]) -> Iterator[str]:
+    """빌더 미리보기 — 저장/기억 없이 현재 설정으로만 응답. (요건 P0 '미리보기 대화')
+
+    보안(H1): 요청 본문의 Companion.model은 계정 유저에게는 무시된다 —
+    티어가 모델을 강제하고, 사용량도 기록한다 (무기록 우회 방지).
+    """
+    billing.check_chat_quota(user_id)
     system = compiler.compile_system_prompt(
         companion,
         extra_context="지금은 사용자가 너를 만들어보며 시험 삼아 대화하는 중이다. 설정대로 자연스럽게 반응해라.",
@@ -118,5 +124,11 @@ def preview_stream(companion: Companion, messages: list[dict]) -> Iterator[str]:
     msgs = [m for m in messages if m.get("role") in ("user", "assistant") and m.get("content")]
     while msgs and msgs[0]["role"] != "user":
         msgs.pop(0)
-    provider = get_provider(companion.model.provider, companion.model.name)
+    tiered = billing.effective_model(user_id)
+    provider = get_provider(*(tiered or (companion.model.provider, companion.model.name)))
+    provider.last_usage = None
     yield from provider.stream_chat(system, msgs, max_tokens=config.CHAT_MAX_TOKENS)
+    if provider.last_usage:
+        db.add_usage(user_id, companion.id, "llm",
+                     provider=provider.name, model=provider.model,
+                     **provider.last_usage)

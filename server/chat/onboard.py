@@ -53,37 +53,61 @@ _EXTRACT_PROMPT = """아래는 '{name}'(관계: {template})와 사용자의 첫 
 JSON:"""
 
 
-def _providers():
-    """(선호, 폴백) — 온보딩은 품질이 중요해 요약 모델(좋은 모델)을 먼저 쓰되,
-    그게 실패하면(키/크레딧 부재) 대화 기본 모델로 떨어져 계속 동작한다."""
+def _providers(user_id: str):
+    """(선호, 폴백).
+
+    셀프호스팅 오너: 요약 모델(좋은 모델) 우선, 실패 시 대화 기본으로 폴백.
+    계정(과금) 유저: 티어 모델로 강제 — 온보딩이 쿼터·티어를 우회하는
+    경로가 되지 않게 한다 (보안 H1).
+    """
+    from .. import billing
+    tiered = billing.effective_model(user_id)
+    if tiered:
+        return get_provider(*tiered), None
     preferred = get_summary_provider()
     fallback = get_provider()
     return preferred, (fallback if fallback is not preferred else None)
 
 
-def onboard_stream(companion: Companion, messages: list[dict]) -> Iterator[str]:
-    """원형 컴패니언과의 첫 만남 대화 — 무저장."""
+def _record(user_id: str, companion: Companion, provider) -> None:
+    if getattr(provider, "last_usage", None):
+        db.add_usage(user_id, companion.id, "llm",
+                     provider=provider.name, model=provider.model,
+                     **provider.last_usage)
+
+
+def onboard_stream(user_id: str, companion: Companion,
+                   messages: list[dict]) -> Iterator[str]:
+    """원형 컴패니언과의 첫 만남 대화 — 무저장(사용량은 기록)."""
+    from .. import billing
+    billing.check_chat_quota(user_id)
     system = compiler.compile_system_prompt(companion, extra_context=ONBOARD_HINT)
     msgs = [m for m in messages
             if m.get("role") in ("user", "assistant") and m.get("content")]
     msgs.insert(0, _SEED)
-    preferred, fallback = _providers()
+    preferred, fallback = _providers(user_id)
+    preferred.last_usage = None
     try:
         yield from preferred.stream_chat(system, msgs, max_tokens=1024)
+        _record(user_id, companion, preferred)
     except Exception:
         if fallback is None:
             raise
+        fallback.last_usage = None
         yield from fallback.stream_chat(system, msgs, max_tokens=1024)
+        _record(user_id, companion, fallback)
 
 
-def extract(companion: Companion, messages: list[dict]) -> dict:
+def extract(user_id: str, companion: Companion, messages: list[dict]) -> dict:
     transcript = "\n".join(
         f"{'사용자' if m['role'] == 'user' else companion.name}: {m['content']}"
         for m in messages if m.get("content"))
     prompt = _EXTRACT_PROMPT.format(
         name=companion.name, template=companion.relationship.template,
         transcript=transcript)
-    preferred, fallback = _providers()
+    from .. import billing
+    billing.check_chat_quota(user_id)
+    preferred, fallback = _providers(user_id)
     msg = [{"role": "user", "content": prompt}]
     try:
         raw = preferred.complete(_EXTRACT_SYSTEM, msg, max_tokens=1024)
