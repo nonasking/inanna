@@ -5,6 +5,7 @@
 시간의 흐름은 상황의 것.
 """
 import datetime
+import math
 import time
 
 from ..companion.schema import Companion
@@ -24,6 +25,22 @@ def _time_of_day(hour: int) -> str:
     if 18 <= hour < 22:
         return "저녁"
     return "밤늦은 시간"
+
+
+def bond_level(user_id: str, companion_id: str) -> float:
+    """유대감 0~1 — 함께한 시간과 대화량의 포화 곡선.
+
+    통화 오브의 시각 변화(색·광량)에 쓰인다: 관계가 깊어질수록 빛이
+    따뜻하고 풍성해진다. 설정(intimacy)이 아니라 축적의 함수 — 나비의
+    '변태' 서사를 오브의 시간 변화로 이식한 것.
+    ~2주+수백 마디에 0.5, ~석 달 꾸준히 대화하면 0.9쯤에 수렴한다.
+    """
+    stats = db.relationship_stats(user_id, companion_id)
+    if not stats:
+        return 0.0
+    days = max((time.time() - stats["first_ts"]) / 86400, 0)
+    msgs = db.message_count(user_id, companion_id)
+    return round(1 - math.exp(-(days / 45 + msgs / 900)), 3)
 
 
 def build_context(user_id: str, companion: Companion) -> str:

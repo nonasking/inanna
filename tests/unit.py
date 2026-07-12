@@ -155,6 +155,30 @@ def test_auth():
     assert not db.all_memories(uid2, "c1"), "계정 삭제 후 기억 잔존"
 
 
+def test_bond():
+    import time as _t
+    from server.chat import relationship
+    from server.memory import db
+    db.init()
+    assert relationship.bond_level("ub1", "c1") == 0.0, "데이터 없으면 0"
+    # 30일 전 시작 + 대화 300마디 → 중간쯤, 단조 증가, 1 미만
+    with db.conn() as c:
+        c.execute("INSERT INTO sessions (user_id, companion_id, started_at) VALUES "
+                  "('ub1', 'c1', ?)", (_t.time() - 30 * 86400,))
+        sid = c.execute("SELECT last_insert_rowid() AS i").fetchone()["i"]
+        for i in range(300):
+            c.execute("INSERT INTO messages (session_id, role, content, ts) VALUES "
+                      "(?, 'user', 'm', ?)", (sid, _t.time() - i))
+    b1 = relationship.bond_level("ub1", "c1")
+    assert 0.3 < b1 < 1.0, f"30일+300마디 bond={b1}"
+    with db.conn() as c:
+        for i in range(700):
+            c.execute("INSERT INTO messages (session_id, role, content, ts) VALUES "
+                      "(?, 'user', 'm', ?)", (sid, _t.time()))
+    b2 = relationship.bond_level("ub1", "c1")
+    assert b2 > b1 and b2 < 1.0, "대화가 쌓이면 증가, 1 미만 유지"
+
+
 def test_billing():
     from server import auth, billing
     from server.memory import db
@@ -196,6 +220,7 @@ if __name__ == "__main__":
     check("기억 CRUD·사용량", test_memory_crud)
     check("계정 인증 (가입·로그인·삭제)", test_auth)
     check("과금 티어·쿼터", test_billing)
+    check("유대감(bond) 곡선", test_bond)
     if FAILURES:
         print(f"\n실패 {len(FAILURES)}: {', '.join(FAILURES)}")
         sys.exit(1)

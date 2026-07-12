@@ -93,9 +93,12 @@ class VoiceSession:
             pass
 
     async def run(self) -> None:
+        from ..chat import relationship
         await self.send_event(
             type="ready", session_id=self.session_id,
             voice_engine=self.companion.voice.engine,
+            # 유대감 0~1 — 오브의 색·광량이 관계의 축적에 따라 변한다
+            bond=relationship.bond_level(self.user_id, self.companion.id),
         )
         if self.companion.voice.engine == "sovits":
             asyncio.create_task(self._warmup())

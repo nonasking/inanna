@@ -37,7 +37,7 @@ WS 메시지 순서 보장을 이용해 "JSON 메타 → 바이너리" 쌍으로
 
 | type | 필드 | 의미 |
 |---|---|---|
-| `ready` | `session_id`, `voice_engine` | 인증 완료 |
+| `ready` | `session_id`, `voice_engine`, `bond`(0~1 유대감 — 오브 시각 변화용) | 인증 완료 |
 | `state` | `value`: idle\|listening\|thinking\|speaking | 상태 전이 (UI 반영) |
 | `stt` | `text` | 사용자 발화 인식 결과 |
 | `text` | `delta` | 응답 텍스트 델타 (자막) |

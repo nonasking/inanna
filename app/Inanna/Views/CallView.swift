@@ -34,7 +34,7 @@ struct CallView: View {
                 }
                 .padding(.top, 48)
 
-                Orb(state: call.state)
+                Orb(state: call.state, bond: call.bond)
                     .frame(width: 140, height: 140)
                     .padding(.vertical, 56)
 
@@ -75,19 +75,28 @@ struct CallView: View {
     }
 }
 
-/// 상태별로 다르게 숨쉬는 오브 — 웹 통화 화면과 같은 시각 언어
+/// 상태별로 다르게 숨쉬는 오브 — 웹 통화 화면과 같은 시각 언어.
+/// bond(유대감 0~1)가 높을수록 색이 따뜻해지고 빛이 풍성해진다.
 private struct Orb: View {
     let state: String
+    var bond: Double = 0
     @State private var phase = false
+
+    private func mix(_ a: (Double, Double, Double), _ b: (Double, Double, Double)) -> Color {
+        Color(red: a.0 + (b.0 - a.0) * bond,
+              green: a.1 + (b.1 - a.1) * bond,
+              blue: a.2 + (b.2 - a.2) * bond)
+    }
 
     var body: some View {
         Circle()
-            .fill(RadialGradient(colors: [Color(red: 0.8, green: 0.69, blue: 1.0),
-                                          Color(red: 0.49, green: 0.37, blue: 0.75)],
+            .fill(RadialGradient(colors: [mix((0.80, 0.69, 1.0), (1.0, 0.86, 0.93)),
+                                          mix((0.49, 0.37, 0.75), (0.70, 0.35, 0.56))],
                                  center: .init(x: 0.38, y: 0.34),
                                  startRadius: 4, endRadius: 70))
-            .shadow(color: Color(red: 0.71, green: 0.55, blue: 0.95).opacity(0.4),
-                    radius: phase ? 44 : 24)
+            .shadow(color: mix((0.71, 0.55, 0.95), (1.0, 0.57, 0.78))
+                        .opacity(0.4 + bond * 0.15),
+                    radius: (phase ? 44 : 24) + bond * 14)
             .scaleEffect(scale)
             .animation(animation, value: phase)
             .onAppear { phase = true }

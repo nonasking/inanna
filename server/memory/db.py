@@ -209,6 +209,17 @@ def relationship_stats(user_id: str, companion_id: str) -> dict | None:
     return {"first_ts": row["first_ts"], "last_ts": row["last_ts"]}
 
 
+def message_count(user_id: str, companion_id: str) -> int:
+    """관계의 축적량 — 유대감(bond) 계산용."""
+    with conn() as c:
+        row = c.execute(
+            """SELECT COUNT(*) AS n FROM messages m
+               JOIN sessions s ON s.id = m.session_id
+               WHERE s.user_id = ? AND s.companion_id = ?""",
+            (user_id, companion_id)).fetchone()
+    return row["n"]
+
+
 def recent_history(user_id: str, companion_id: str, limit: int = 50) -> list[dict]:
     """UI 복원용 — 컴패니언의 최근 메시지 (세션 무관)."""
     with conn() as c:

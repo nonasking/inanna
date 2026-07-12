@@ -9,6 +9,7 @@ final class CallEngine: NSObject, ObservableObject {
     @Published var state = "connecting"   // connecting | idle | listening | thinking | speaking | ended
     @Published var userCaption = ""
     @Published var charCaption = ""
+    @Published var bond = 0.0             // 유대감 0~1 — 오브 색·광량 (ready.bond)
     @Published var error: String?
 
     private var ws: URLSessionWebSocketTask?
@@ -131,7 +132,7 @@ final class CallEngine: NSObject, ObservableObject {
               let type = obj["type"] as? String else { return }
         switch type {
         case "ready":
-            break
+            bond = obj["bond"] as? Double ?? 0
         case "state":
             state = obj["value"] as? String ?? state
         case "stt":

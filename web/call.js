@@ -135,6 +135,11 @@ async function onCallMessage(e) {
   }
   const ev = JSON.parse(e.data);
   switch (ev.type) {
+    case "ready":
+      // 유대감(0~1)에 따라 오브의 색·광량이 변한다
+      if (typeof ev.bond === "number")
+        $("call-orb").style.setProperty("--bond", ev.bond);
+      break;
     case "state": setCallState(ev.value); break;
     case "stt":
       $("call-user-caption").textContent = ev.text;
