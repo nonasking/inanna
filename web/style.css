@@ -191,3 +191,21 @@ button.small { padding: 8px 10px; }
   #call-orb { width: 90px; height: 90px; margin: 2vh 0; }
   .orb-core { width: 64px; height: 64px; }
 }
+
+/* 인증 화면 */
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 60; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.auth-card { width: 100%; max-width: 360px; }
+.auth-card h1 { color: var(--accent); text-align: center; }
+.auth-card > .hint { text-align: center; margin: 4px 0 20px; }
+.auth-card .tabs { padding: 0 0 14px; }
+.auth-card label { display: block; margin: 10px 0 4px; font-size: 13px; color: var(--dim); }
+.auth-card input {
+  width: 100%; margin-top: 4px; padding: 11px 12px; font: inherit;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--panel2); border-radius: 10px;
+}
+.auth-card .primary { width: 100%; margin-top: 14px; padding: 12px; }
+#auth-error { min-height: 18px; margin-top: 10px; }

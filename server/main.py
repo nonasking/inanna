@@ -3,7 +3,7 @@ import json
 import secrets
 
 import uvicorn
-from fastapi import (Depends, FastAPI, Header, HTTPException, UploadFile,
+from fastapi import (Depends, FastAPI, Header, HTTPException, Request, UploadFile,
                      WebSocket, WebSocketDisconnect)
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -49,26 +49,51 @@ def current_user(authorization: str | None = Header(None)) -> str:
 
 # ---------- 계정 (P4 멀티유저 — 셀프호스팅 단일 토큰과 공존) ----------
 
+# 인증 엔드포인트 레이트리밋 — 공개 노출(클로즈베타 Funnel) 대비 브루트포스 방어.
+# 단일 프로세스 인메모리로 충분한 규모 (창 10분, IP당 20회)
+_auth_hits: dict[str, list[float]] = {}
+
+
+def _rate_limit(request, limit: int = 20, window: float = 600.0) -> None:
+    import time as _time
+    ip = (request.client.host if request.client else "?")
+    now = _time.time()
+    hits = [t for t in _auth_hits.get(ip, []) if now - t < window]
+    if len(hits) >= limit:
+        raise HTTPException(429, "요청이 너무 많아요. 잠시 후 다시 시도해주세요.")
+    hits.append(now)
+    _auth_hits[ip] = hits
+
+
 class Credentials(BaseModel):
     email: str
     password: str
+    invite: str = ""    # 클로즈베타: INANNA_INVITE_CODES 설정 시 필수
 
 
 @app.post("/api/auth/register")
-def auth_register(req: Credentials):
+def auth_register(req: Credentials, request: Request):
+    _rate_limit(request)
     try:
-        token = auth.register(req.email, req.password)
+        token = auth.register(req.email, req.password, invite=req.invite)
     except ValueError as e:
         raise HTTPException(400, str(e))
     return {"token": token}
 
 
 @app.post("/api/auth/login")
-def auth_login(req: Credentials):
+def auth_login(req: Credentials, request: Request):
+    _rate_limit(request)
     token = auth.login(req.email, req.password)
     if not token:
         raise HTTPException(401, "이메일 또는 비밀번호가 올바르지 않습니다")
     return {"token": token}
+
+
+@app.get("/api/auth/config")
+def auth_config():
+    """가입 화면 구성용 — 초대제 여부 (무인증 공개)."""
+    return {"invite_required": bool(config.INVITE_CODES)}
 
 
 @app.post("/api/auth/logout")

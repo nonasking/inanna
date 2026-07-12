@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     password_hash TEXT,              -- scrypt salt$hash (SIWA 계정은 NULL)
     apple_sub TEXT UNIQUE,           -- Sign in with Apple subject (P4 어댑터 자리)
     tier TEXT,                       -- 과금 티어 (NULL = 기본, billing.DEFAULT_TIER)
+    invite TEXT,                     -- 가입에 쓴 초대 코드 (클로즈베타 추적)
     created_at REAL NOT NULL
 );
 CREATE TABLE IF NOT EXISTS auth_tokens (
@@ -86,10 +87,11 @@ def init():
     with conn() as c:
         c.executescript(SCHEMA)
         # 마이그레이션 — CREATE IF NOT EXISTS는 기존 테이블에 칼럼을 못 더한다
-        try:
-            c.execute("ALTER TABLE accounts ADD COLUMN tier TEXT")
-        except sqlite3.OperationalError:
-            pass  # 이미 있음
+        for col in ("tier TEXT", "invite TEXT"):
+            try:
+                c.execute(f"ALTER TABLE accounts ADD COLUMN {col}")
+            except sqlite3.OperationalError:
+                pass  # 이미 있음
 
 
 def active_session(user_id: str, companion_id: str) -> int | None:

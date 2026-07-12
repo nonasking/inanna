@@ -29,6 +29,9 @@ DB_PATH = Path(os.environ.get("INANNA_DB", ROOT / "inanna.db"))
 
 # 설정 시 모든 /api 요청에 Authorization: Bearer <token> 요구
 AUTH_TOKEN = os.environ.get("INANNA_AUTH_TOKEN", "")
+# 클로즈베타: 설정 시 회원가입에 초대 코드 요구 (쉼표 구분 복수 가능)
+INVITE_CODES = {c.strip() for c in os.environ.get("INANNA_INVITE_CODES", "").split(",")
+                if c.strip()}
 # 셀프호스팅 단일 유저 id — 제품 모드(P4)에서 계정 인증이 이 자리를 대체한다
 DEFAULT_USER = "local"
 

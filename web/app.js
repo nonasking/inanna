@@ -19,14 +19,64 @@ async function api(url, opts = {}) {
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) opts.headers["Authorization"] = `Bearer ${token}`;
   const r = await fetch(url, opts);
-  if (r.status === 401) {
-    const entered = prompt("접속 토큰을 입력하세요 (INANNA_AUTH_TOKEN)");
-    if (entered) {
-      localStorage.setItem(TOKEN_KEY, entered.trim());
-      return api(url, opts);
-    }
-  }
+  if (r.status === 401) showAuth();
   return r;
+}
+
+/* ---------- 인증 (계정 로그인/가입 · 셀프호스팅 토큰) ---------- */
+let authMode = "login";
+
+async function showAuth() {
+  if (!$("view-auth").hidden) return;
+  $("view-auth").hidden = false;
+  try {
+    const cfg = await (await fetch("/api/auth/config")).json();
+    $("auth-invite-row").dataset.off = cfg.invite_required ? "0" : "1";
+  } catch {}
+  authTab(authMode);
+}
+
+function authTab(mode) {
+  authMode = mode;
+  for (const m of ["login", "register", "token"])
+    $(`auth-tab-${m}`).classList.toggle("active", m === mode);
+  $("auth-form-account").hidden = mode === "token";
+  $("auth-form-token").hidden = mode !== "token";
+  $("auth-invite-row").hidden = mode !== "register" || $("auth-invite-row").dataset.off === "1";
+  $("auth-submit").textContent = { login: "로그인", register: "가입하기", token: "연결" }[mode];
+  $("auth-error").textContent = "";
+}
+
+async function authSubmit() {
+  $("auth-error").textContent = "";
+  try {
+    let token;
+    if (authMode === "token") {
+      token = $("auth-token").value.trim();
+      if (!token) return;
+      const check = await fetch("/api/companions",
+                                { headers: { Authorization: `Bearer ${token}` } });
+      if (!check.ok) throw new Error("토큰이 올바르지 않아요");
+    } else {
+      const r = await fetch(`/api/auth/${authMode}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: $("auth-email").value.trim(),
+          password: $("auth-password").value,
+          invite: $("auth-invite").value.trim(),
+        }),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(body.detail || "실패했어요");
+      token = body.token;
+    }
+    localStorage.setItem(TOKEN_KEY, token);
+    $("view-auth").hidden = true;
+    location.reload();
+  } catch (e) {
+    $("auth-error").textContent = e.message;
+  }
 }
 
 /* ---------- view switching ---------- */

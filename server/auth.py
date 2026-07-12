@@ -43,8 +43,11 @@ def _issue_token(account_id: int) -> str:
     return token
 
 
-def register(email: str, password: str) -> str:
+def register(email: str, password: str, invite: str = "") -> str:
     """계정 생성 → 세션 토큰. ValueError는 사용자에게 그대로 보여줄 메시지."""
+    from . import config
+    if config.INVITE_CODES and invite.strip() not in config.INVITE_CODES:
+        raise ValueError("지금은 초대 코드가 있어야 가입할 수 있어요")
     email = email.strip().lower()
     if not _EMAIL.match(email):
         raise ValueError("이메일 형식이 올바르지 않습니다")
@@ -54,8 +57,9 @@ def register(email: str, password: str) -> str:
         if c.execute("SELECT 1 FROM accounts WHERE email = ?", (email,)).fetchone():
             raise ValueError("이미 가입된 이메일입니다")
         cur = c.execute(
-            "INSERT INTO accounts (email, password_hash, created_at) VALUES (?, ?, ?)",
-            (email, _hash_password(password), time.time()))
+            "INSERT INTO accounts (email, password_hash, invite, created_at)"
+            " VALUES (?, ?, ?, ?)",
+            (email, _hash_password(password), invite.strip() or None, time.time()))
         account_id = cur.lastrowid
     return _issue_token(account_id)
 

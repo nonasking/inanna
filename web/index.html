@@ -10,7 +10,7 @@
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/static/icon-192.png">
-<link rel="stylesheet" href="/static/style.css?v=8">
+<link rel="stylesheet" href="/static/style.css?v=9">
 </head>
 <body>
 
@@ -172,6 +172,29 @@
   <div id="memories-list" class="list"></div>
 </section>
 
+<!-- 인증 — 계정(클로즈베타) 또는 셀프호스팅 토큰 -->
+<section id="view-auth" class="auth-overlay" hidden>
+  <div class="auth-card">
+    <h1>Inanna</h1>
+    <p class="hint">관계를 만드는 AI 컴패니언</p>
+    <nav class="tabs">
+      <button id="auth-tab-login" class="tab active" onclick="authTab('login')">로그인</button>
+      <button id="auth-tab-register" class="tab" onclick="authTab('register')">가입</button>
+      <button id="auth-tab-token" class="tab" onclick="authTab('token')">토큰</button>
+    </nav>
+    <div id="auth-form-account">
+      <label>이메일 <input id="auth-email" type="email" autocomplete="username"></label>
+      <label>비밀번호 <input id="auth-password" type="password" autocomplete="current-password"></label>
+      <label id="auth-invite-row" hidden>초대 코드 <input id="auth-invite" placeholder="베타 초대 코드"></label>
+    </div>
+    <div id="auth-form-token" hidden>
+      <label>접속 토큰 <input id="auth-token" type="password" placeholder="INANNA_AUTH_TOKEN"></label>
+    </div>
+    <p id="auth-error" class="hint" style="color:#e77"></p>
+    <button class="primary" id="auth-submit" onclick="authSubmit()">로그인</button>
+  </div>
+</section>
+
 <!-- 음성 통화 오버레이 -->
 <section id="view-call" class="call-overlay" hidden onclick="interruptCall()">
   <div class="call-top">
@@ -186,7 +209,7 @@
   <button class="call-end" onclick="event.stopPropagation(); endCall()">통화 종료</button>
 </section>
 
-<script src="/static/app.js?v=4"></script>
+<script src="/static/app.js?v=5"></script>
 <script src="/static/call.js?v=5"></script>
 </body>
 </html>
