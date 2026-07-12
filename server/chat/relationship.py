@@ -43,6 +43,38 @@ def bond_level(user_id: str, companion_id: str) -> float:
     return round(1 - math.exp(-(days / 45 + msgs / 900)), 3)
 
 
+# 관계 성장 아크 — 설정(호칭·말단계·거리감)은 사용자의 것이라 불변이고,
+# 성장은 그 위의 '결'을 바꾼다. (문턱, 단계명, 결 텍스트, 첫 통과 이벤트)
+GROWTH_STAGES = [
+    (0.25, "warming",
+     "아직 서로를 알아가는 시기다. 설정된 관계 안에서도 살짝 조심스럽고 궁금한 게 많은 결로.",
+     "요즘 대화가 쌓이면서 처음보다 편해졌다는 걸 오늘 문득 느꼈다 — 티 내고 싶으면 자연스럽게."),
+    (0.55, "close",
+     "제법 가까워진 사이다. 농담과 장난이 스스럼없고, 상대의 패턴(말버릇·기분)을 알아챈다.",
+     "오늘따라 부쩍 가까워졌다는 게 실감난다 — 관계에 맞게 그 느낌을 슬쩍 표현해도 좋다."),
+    (0.8, "deep",
+     "오래 함께한 사이의 편안함이 배어 있다. 말을 다 하지 않아도 통하고, 침묵도 어색하지 않다. "
+     "과거의 대화를 자연스럽게 인용하며 농담한다.",
+     "함께한 시간이 꽤 쌓였다. 오늘은 그게 새삼 고맙게 느껴지는 날이다 — 무겁지 않게, 한 번쯤 표현해라."),
+]
+
+
+def growth_context(user_id: str, companion: Companion, bond: float) -> list[str]:
+    """현재 성장 단계의 결 + 문턱 첫 통과 시 1회성 이벤트 라인."""
+    current = None
+    for threshold, stage, texture, event in GROWTH_STAGES:
+        if bond >= threshold:
+            current = (stage, texture, event)
+    if current is None:
+        return []
+    stage, texture, event = current
+    parts = [texture]
+    if stage not in db.growth_stages_passed(user_id, companion.id):
+        db.mark_growth_stage(user_id, companion.id, stage)
+        parts.append(event)
+    return parts
+
+
 def build_context(user_id: str, companion: Companion) -> str:
     now = time.time()
     dt = datetime.datetime.fromtimestamp(now)
@@ -64,4 +96,5 @@ def build_context(user_id: str, companion: Companion) -> str:
             parts.append(
                 f"마지막 대화 이후 {int(gap_days)}일 만이다. 오랜만인 걸 관계에 맞게 반영해라 "
                 "(반가움, 서운함, 궁금함 등).")
+        parts += growth_context(user_id, companion, bond_level(user_id, companion.id))
     return " ".join(parts)

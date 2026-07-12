@@ -188,6 +188,27 @@ def test_bond():
     assert b2 > b1 and b2 < 1.0, "대화가 쌓이면 증가, 1 미만 유지"
 
 
+def test_growth_arc():
+    from server.chat import relationship
+    from server.companion.schema import Companion
+    from server.memory import db
+    db.init()
+    c = Companion.model_validate({"id": "gc", "name": "지", "relationship": {"template": "friend"}})
+    # 낮은 bond → 성장 결 없음
+    assert relationship.growth_context("ug1", c, 0.1) == []
+    # warming 첫 통과 → 결 + 1회성 이벤트
+    parts = relationship.growth_context("ug1", c, 0.3)
+    assert len(parts) == 2, "결+이벤트"
+    # 같은 단계 재호출 → 결만 (이벤트는 1회)
+    assert len(relationship.growth_context("ug1", c, 0.3)) == 1
+    # deep 도달 → 최고 단계의 결 + 새 이벤트, warming 이벤트는 재발화 없음
+    parts = relationship.growth_context("ug1", c, 0.85)
+    assert len(parts) == 2 and "편안함" in parts[0]
+    assert len(relationship.growth_context("ug1", c, 0.85)) == 1
+    # 설정 불변 확인 — growth는 relationship 객체를 건드리지 않는다
+    assert c.relationship.intimacy == 0.7
+
+
 def test_billing():
     from server import auth, billing
     from server.memory import db
@@ -229,6 +250,7 @@ if __name__ == "__main__":
     check("기억 CRUD·사용량", test_memory_crud)
     check("계정 인증 (가입·로그인·삭제)", test_auth)
     check("과금 티어·쿼터", test_billing)
+    check("관계 성장 아크", test_growth_arc)
     check("유대감(bond) 곡선", test_bond)
     if FAILURES:
         print(f"\n실패 {len(FAILURES)}: {', '.join(FAILURES)}")

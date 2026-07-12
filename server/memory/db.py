@@ -42,6 +42,13 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     created_at REAL NOT NULL,
     last_used REAL
 );
+CREATE TABLE IF NOT EXISTS growth (
+    user_id TEXT NOT NULL,
+    companion_id TEXT NOT NULL,
+    stage TEXT NOT NULL,             -- 성장 문턱 통과 기록 (1회성 이벤트용)
+    ts REAL NOT NULL,
+    PRIMARY KEY (user_id, companion_id, stage)
+);
 CREATE TABLE IF NOT EXISTS usage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ts REAL NOT NULL,
@@ -230,6 +237,19 @@ def recent_history(user_id: str, companion_id: str, limit: int = 50) -> list[dic
             (user_id, companion_id, limit),
         ).fetchall()
     return [dict(r) for r in reversed(rows)]
+
+
+def growth_stages_passed(user_id: str, companion_id: str) -> set[str]:
+    with conn() as c:
+        rows = c.execute("SELECT stage FROM growth WHERE user_id = ? AND companion_id = ?",
+                         (user_id, companion_id)).fetchall()
+    return {r["stage"] for r in rows}
+
+
+def mark_growth_stage(user_id: str, companion_id: str, stage: str) -> None:
+    with conn() as c:
+        c.execute("INSERT OR IGNORE INTO growth (user_id, companion_id, stage, ts)"
+                  " VALUES (?, ?, ?, ?)", (user_id, companion_id, stage, time.time()))
 
 
 _USAGE_FIELDS = ("provider", "model", "input_tokens", "output_tokens",
