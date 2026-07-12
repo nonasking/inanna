@@ -20,6 +20,11 @@ RUN pip install --no-cache-dir -e .
 ENV INANNA_DB=/data/inanna.db \
     INANNA_COMPANIONS_DIR=/data/companions \
     INANNA_VOICES_DIR=/data/voices
+
+# 비특권 실행 (보안 M4) — /data는 앱 사용자 소유
+RUN useradd --system --create-home app \
+    && mkdir -p /data && chown -R app:app /data /app
+USER app
 VOLUME /data
 EXPOSE 8787
 

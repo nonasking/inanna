@@ -2,11 +2,24 @@ import Foundation
 import SwiftUI
 
 /// 앱 전역 상태 — 서버 연결 설정과 컴패니언 목록.
-/// 토큰은 v1에서 UserDefaults (제품 출시 전 Keychain으로 이동할 것).
+/// 토큰은 Keychain(이 기기·잠금해제 한정), 서버 주소만 UserDefaults.
 @MainActor
 final class AppState: ObservableObject {
     @AppStorage("serverURL") var serverURLString = ""
-    @AppStorage("authToken") var authToken = ""
+
+    @Published var authToken: String = Keychain.get("authToken") {
+        didSet { Keychain.set(authToken, for: "authToken") }
+    }
+
+    init() {
+        // 구버전(UserDefaults 평문)에서 1회 이관 후 흔적 제거
+        if authToken.isEmpty,
+           let legacy = UserDefaults.standard.string(forKey: "authToken"),
+           !legacy.isEmpty {
+            authToken = legacy
+        }
+        UserDefaults.standard.removeObject(forKey: "authToken")
+    }
 
     @Published var companions: [Companion] = []
     @Published var lastError: String?
