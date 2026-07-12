@@ -11,6 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ["INANNA_DB"] = tempfile.mkstemp(suffix=".db")[1]  # 격리 DB
+os.environ["INANNA_INVITE_CODES"] = ""  # .env의 베타 초대제와 격리 (config가 env 우선)
 
 FAILURES: list[str] = []
 
@@ -155,6 +156,22 @@ def test_auth():
     assert auth.login("qa@inanna.test", "wrong-password") is None
     auth.logout(token)
     assert auth.resolve_token(token) is None, "로그아웃 후 토큰 생존"
+    # 초대제: 코드 없으면 거절, 맞으면 통과 + 기록
+    from server import config
+    config.INVITE_CODES = {"beta-code"}
+    try:
+        try:
+            auth.register("invited@inanna.test", "password123")
+            raise AssertionError("초대 코드 없이 가입되면 안 됨")
+        except ValueError:
+            pass
+        t = auth.register("invited@inanna.test", "password123", invite="beta-code")
+        assert t
+        with db.conn() as c:
+            row = c.execute("SELECT invite FROM accounts WHERE email='invited@inanna.test'").fetchone()
+        assert row["invite"] == "beta-code"
+    finally:
+        config.INVITE_CODES = set()
     # 계정 삭제 = 데이터 완전 삭제
     token2 = auth.login("qa@inanna.test", "password123")
     uid2 = auth.resolve_token(token2)
