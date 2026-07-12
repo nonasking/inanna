@@ -51,7 +51,7 @@ Open a companion's chat and tap 📞 for a hands-free voice call (half-duplex: i
 
 ## Roadmap to the App Store
 
-The final form is a native iOS app. The server is the product — all logic and state live behind the API, and clients are thin views, so the current web UI is a development client that will be replaced by SwiftUI in P4. Multi-user data scoping and bearer auth are already in place; the product-mode swap points are auth (bearer → Sign in with Apple), storage (SQLite/YAML → Postgres), and push (APNs for proactive presence). See `docs/requirements.md` §1.5 for the App Store constraint checklist.
+The final form is a native iOS app. The server is the product — all logic and state live behind the API, and clients are thin views, so the current web UI is a development client that will be replaced by SwiftUI in P4. An early SwiftUI client lives in `app/` — it builds, but it's a pre-alpha skeleton, not yet usable day-to-day. Multi-user data scoping and bearer auth are implemented (`server/auth.py`, `server/billing.py`) but not yet exercised in production — the account tables are still empty; the product-mode swap points are auth (bearer → Sign in with Apple), storage (SQLite/YAML → Postgres), and push (APNs for proactive presence). See `docs/requirements.md` §1.5 for the App Store constraint checklist.
 
 ## Status
 

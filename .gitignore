@@ -7,3 +7,4 @@ __pycache__/
 inanna.db
 *.egg-info/
 .env
+app/build*/
