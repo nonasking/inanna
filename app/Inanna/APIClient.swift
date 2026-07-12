@@ -6,9 +6,21 @@ struct APIClient {
     var baseURL: URL
     var token: String
 
+    private func url(for path: String) -> URL {
+        // appendingPathComponent는 '?'를 %3F로 이스케이프한다 — 쿼리는 분리해 붙인다
+        let parts = path.split(separator: "?", maxSplits: 1)
+        var url = baseURL.appendingPathComponent(String(parts[0]))
+        if parts.count == 2,
+           var comps = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            comps.percentEncodedQuery = String(parts[1])
+            url = comps.url ?? url
+        }
+        return url
+    }
+
     private func request(_ path: String, method: String = "GET",
                          json: [String: Any]? = nil) -> URLRequest {
-        var req = URLRequest(url: baseURL.appendingPathComponent(path))
+        var req = URLRequest(url: url(for: path))
         req.httpMethod = method
         if !token.isEmpty {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
