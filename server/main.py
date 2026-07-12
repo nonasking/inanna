@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import auth, billing, config, tts
-from .chat import orchestrator
+from .chat import onboard, orchestrator
 from .companion import card_import, store, templates
 from .companion.schema import Companion, Voice
 from .llm import get_provider
@@ -211,6 +211,34 @@ def history(companion_id: str, limit: int = 50, user: str = Depends(current_user
             if greeting:
                 rows = [{"role": "assistant", "content": greeting, "ts": 0}]
     return {"messages": rows}
+
+
+# ---------- 첫 만남 온보딩 (대화로 컴패니언이 형성된다) ----------
+
+class OnboardRequest(BaseModel):
+    companion: Companion          # 원형 — 관계·이름만 채워진 상태
+    messages: list[dict] = []
+    first_memory: str = ""
+
+
+@app.post("/api/onboard/chat")
+def onboard_chat(req: OnboardRequest, user: str = Depends(current_user)):
+    """첫 만남 대화 스트림 — 무저장, 완료 시 complete가 기록한다."""
+    return _sse(onboard.onboard_stream(req.companion, req.messages))
+
+
+@app.post("/api/onboard/extract")
+def onboard_extract(req: OnboardRequest, user: str = Depends(current_user)):
+    try:
+        return onboard.extract(req.companion, req.messages)
+    except Exception:
+        raise HTTPException(502, "대화에서 성격을 정리하지 못했어요. 한 번 더 시도해주세요.")
+
+
+@app.post("/api/onboard/complete")
+def onboard_complete(req: OnboardRequest, user: str = Depends(current_user)):
+    onboard.complete(user, req.companion, req.messages, req.first_memory)
+    return {"ok": True, "id": req.companion.id}
 
 
 class PreviewRequest(BaseModel):

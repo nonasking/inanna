@@ -79,12 +79,143 @@ async function authSubmit() {
   }
 }
 
+/* ---------- 첫 만남 온보딩 ---------- */
+const ob = { proto: null, messages: [], userTurns: 0, extracted: null };
+
+function openOnboard() {
+  ob.proto = null; ob.messages = []; ob.userTurns = 0; ob.extracted = null;
+  $("ob-name").value = ""; $("ob-calls-me").value = "";
+  $("ob-log").innerHTML = ""; $("ob-done-row").hidden = true;
+  $("ob-step-rel").hidden = false;
+  $("ob-step-chat").hidden = true;
+  $("ob-step-confirm").hidden = true;
+  const el = $("ob-templates");
+  el.innerHTML = "";
+  for (const tpl of TEMPLATES) {
+    const div = document.createElement("div");
+    div.className = "card ob-tpl";
+    div.dataset.tid = tpl.id;
+    div.innerHTML = `<div class="meta"><div class="name">${escapeHtml(tpl.name)}</div>
+      <div class="rel">${escapeHtml(tpl.description || "")}</div></div>`;
+    div.onclick = () => {
+      for (const c of el.children) c.classList.remove("active");
+      div.classList.add("active");
+    };
+    el.appendChild(div);
+  }
+  showView("onboard");
+}
+
+function obProto() {
+  const tplEl = document.querySelector("#ob-templates .active");
+  const name = $("ob-name").value.trim();
+  if (!tplEl) { alert("어떤 사이가 될지 골라주세요."); return null; }
+  if (!name) { alert("이름을 지어주세요."); return null; }
+  return {
+    id: slugify(name), name,
+    relationship: {
+      template: tplEl.dataset.tid,
+      calls_me: $("ob-calls-me").value.trim(),
+      i_call: "", speech_level: "banmal", intimacy: 0.5, backstory: "",
+    },
+    persona: { traits: {}, speech_quirks: [], description: "",
+               example_dialogue: "", first_message: "", lorebook: [] },
+    voice: { engine: "", voice_id: "", ref_text: "", speed: 1.0 },
+    model: { provider: "", name: "" },
+  };
+}
+
+async function obStart() {
+  const proto = obProto();
+  if (!proto) return;
+  ob.proto = proto;
+  $("ob-title").textContent = `${proto.name}와의 첫 만남`;
+  $("ob-step-rel").hidden = true;
+  $("ob-step-chat").hidden = false;
+  await obTurn();  // 컴패니언이 먼저 인사
+}
+
+async function obTurn() {
+  const text = await runStream($("ob-log"), "/api/onboard/chat",
+                               { companion: ob.proto, messages: ob.messages });
+  if (text) ob.messages.push({ role: "assistant", content: text });
+}
+
+async function obSend() {
+  const input = $("ob-input");
+  const text = input.value.trim();
+  if (!text || $("ob-send").disabled) return;
+  input.value = "";
+  addMsg($("ob-log"), "user", text);
+  ob.messages.push({ role: "user", content: text });
+  ob.userTurns += 1;
+  $("ob-send").disabled = true;
+  await obTurn();
+  $("ob-send").disabled = false;
+  if (ob.userTurns >= 3) $("ob-done-row").hidden = false;
+}
+
+async function obFinish() {
+  $("ob-done-row").hidden = true;
+  const log = $("ob-log");
+  const wait = addMsg(log, "assistant", "(잠시, 지금까지의 너를 정리하는 중…)");
+  wait.className = "msg typing";
+  try {
+    const r = await api("/api/onboard/extract", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companion: ob.proto, messages: ob.messages }),
+    });
+    if (!r.ok) throw new Error((await r.json()).detail || "추출 실패");
+    ob.extracted = await r.json();
+  } catch (e) {
+    wait.remove();
+    $("ob-done-row").hidden = false;
+    addMsg(log, "error", e.message);
+    return;
+  }
+  wait.remove();
+  // 추출 반영
+  const x = ob.extracted;
+  ob.proto.persona.traits = x.traits;
+  ob.proto.persona.speech_quirks = x.speech_quirks;
+  ob.proto.persona.description = x.description;
+  ob.proto.relationship.speech_level = x.speech_level;
+  if (!ob.proto.relationship.calls_me && x.calls_me)
+    ob.proto.relationship.calls_me = x.calls_me;
+  // 확인 화면
+  $("ob-step-chat").hidden = true;
+  $("ob-step-confirm").hidden = false;
+  $("ob-confirm-avatar").textContent = ob.proto.name[0] || "?";
+  $("ob-confirm-name").textContent = ob.proto.name;
+  $("ob-confirm-line").textContent = x.confirm || "나 이런 느낌인 것 같아. 맞지?";
+  const traits = Object.entries(x.traits || {})
+    .filter(([, v]) => v >= 0.6).map(([k]) => k).join(" · ");
+  $("ob-confirm-summary").textContent =
+    (traits ? `성격: ${traits}` : "") + (x.description ? ` — ${x.description}` : "");
+}
+
+async function obComplete() {
+  const r = await api("/api/onboard/complete", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ companion: ob.proto, messages: ob.messages,
+                           first_memory: ob.extracted.first_memory || "" }),
+  });
+  if (!r.ok) { alert("저장에 실패했어요"); return; }
+  await loadList();
+  openChat(ob.proto.id, ob.proto.name);
+}
+
+function obTune() {
+  // 형성된 값이 채워진 채로 세부 설정(빌더) — 저장은 빌더에서
+  openBuilder(ob.proto);
+}
+
 /* ---------- view switching ---------- */
 // 데스크톱 투페인 — 넓은 화면에서는 목록이 사이드바로 상주한다
 const DESKTOP = window.matchMedia("(min-width: 1024px)");
 
 function showView(name) {
-  for (const v of ["list", "builder", "chat", "memories"]) $(`view-${v}`).hidden = v !== name;
+  for (const v of ["list", "builder", "chat", "memories", "onboard"]) $(`view-${v}`).hidden = v !== name;
   if (DESKTOP.matches && name !== "list") $("view-list").hidden = false;
   if (name === "list") loadList();
   markActiveCard();

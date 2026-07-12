@@ -10,7 +10,7 @@
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/static/icon-192.png">
-<link rel="stylesheet" href="/static/style.css?v=9">
+<link rel="stylesheet" href="/static/style.css?v=10">
 </head>
 <body>
 
@@ -22,7 +22,7 @@
   </header>
   <div id="companion-list" class="list"></div>
   <div class="list-actions">
-    <button class="primary" onclick="openBuilder()">+ 새 컴패니언</button>
+    <button class="primary" onclick="openOnboard()">+ 새 컴패니언</button>
     <label class="ghost file-btn">카드 임포트
       <input type="file" id="card-file" accept=".png,.json" hidden>
     </label>
@@ -172,6 +172,51 @@
   <div id="memories-list" class="list"></div>
 </section>
 
+<!-- 첫 만남 온보딩 — 폼 대신 대화로 컴패니언이 형성된다 -->
+<section id="view-onboard" class="view" hidden>
+  <header class="bar">
+    <button class="ghost" onclick="showView('list')">←</button>
+    <h2 id="ob-title">새로운 만남</h2>
+    <span></span>
+  </header>
+
+  <div id="ob-step-rel" class="pane">
+    <p class="hint">어떤 사이가 되고 싶은가요? 나머지는 만나서 알아가면 돼요.</p>
+    <div id="ob-templates" class="list" style="flex:none; padding:8px 0"></div>
+    <label>이름 (부를 이름을 지어주세요) <input id="ob-name" placeholder="예: 유나"></label>
+    <label>나를 부르는 호칭 <span class="hint">비워두면 대화 중에 자연스럽게 정해져요</span>
+      <input id="ob-calls-me" placeholder="예: 오빠 (선택)"></label>
+    <button class="primary" style="width:100%; margin-top:16px" onclick="obStart()">만나러 가기</button>
+    <p class="hint" style="text-align:center; margin-top:12px">
+      <a href="#" onclick="openBuilder(); return false" style="color:var(--dim)">세부 설정으로 직접 만들기</a>
+    </p>
+  </div>
+
+  <div id="ob-step-chat" class="pane chat-pane" hidden>
+    <div id="ob-log" class="chat-log"></div>
+    <div id="ob-done-row" style="padding:0 16px" hidden>
+      <button class="primary" style="width:100%" onclick="obFinish()">이 정도면 서로 알 것 같아요</button>
+    </div>
+    <div class="chat-input">
+      <textarea id="ob-input" rows="1" placeholder="편하게 대답해보세요"></textarea>
+      <button class="primary" id="ob-send" onclick="obSend()">전송</button>
+    </div>
+  </div>
+
+  <div id="ob-step-confirm" class="pane" hidden>
+    <div class="card" style="cursor:default; align-items:flex-start">
+      <div class="avatar" id="ob-confirm-avatar">?</div>
+      <div class="meta" style="flex:1">
+        <div class="name" id="ob-confirm-name"></div>
+        <p id="ob-confirm-line" style="margin-top:6px"></p>
+      </div>
+    </div>
+    <p class="hint" id="ob-confirm-summary" style="margin-top:12px"></p>
+    <button class="primary" style="width:100%; margin-top:16px" onclick="obComplete()">응, 그런 것 같아 — 시작하기</button>
+    <button class="ghost" style="width:100%; margin-top:8px" onclick="obTune()">조금 다듬을게 (세부 설정)</button>
+  </div>
+</section>
+
 <!-- 인증 — 계정(클로즈베타) 또는 셀프호스팅 토큰 -->
 <section id="view-auth" class="auth-overlay" hidden>
   <div class="auth-card">
@@ -209,7 +254,7 @@
   <button class="call-end" onclick="event.stopPropagation(); endCall()">통화 종료</button>
 </section>
 
-<script src="/static/app.js?v=5"></script>
+<script src="/static/app.js?v=6"></script>
 <script src="/static/call.js?v=5"></script>
 </body>
 </html>

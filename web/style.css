@@ -209,3 +209,6 @@ button.small { padding: 8px 10px; }
 }
 .auth-card .primary { width: 100%; margin-top: 14px; padding: 12px; }
 #auth-error { min-height: 18px; margin-top: 10px; }
+
+/* 온보딩 관계 선택 */
+.ob-tpl.active { outline: 2px solid var(--accent); background: var(--panel2); }
