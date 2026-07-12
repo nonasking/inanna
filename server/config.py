@@ -35,7 +35,7 @@ DEFAULT_USER = "local"
 # ---------- LLM 프로바이더 ----------
 # 전역 기본. 컴패니언별 오버라이드(companion.model)가 우선한다.
 PROVIDER = os.environ.get("INANNA_PROVIDER", "anthropic")  # anthropic | ollama | openai
-ANTHROPIC_MODEL = os.environ.get("INANNA_MODEL", "claude-opus-4-8")
+ANTHROPIC_MODEL = os.environ.get("INANNA_MODEL", "claude-sonnet-5")
 OLLAMA_MODEL = os.environ.get("INANNA_OLLAMA_MODEL", "qwen2.5:7b")
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 # OpenAI 호환 엔드포인트 (OpenAI/OpenRouter/Groq/LM Studio/llama.cpp/vLLM …)
