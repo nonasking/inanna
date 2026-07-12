@@ -54,10 +54,15 @@ class UtteranceDetector:
 
     def make_barge_detector(self) -> "UtteranceDetector":
         """재생 중 끼어들기 감지용 파생 감지기 — 캘리브레이션을 물려받되
-        시작 판정만 훨씬 보수적으로 (에코가 AEC를 뚫고 남긴 잔향 무시)."""
+        시작 판정만 훨씬 보수적으로.
+
+        실측(tests/echo_sim.py): TTS 원음 RMS ≈ 6700, AEC 잔향은 보통
+        ≤0.1배(≤670), 사용자 발화는 400~2400. 잔향 상한과 또렷한 발화
+        사이(720)에 절대 임계를 둔다 — 조용한 웅얼거림은 barge 대신
+        탭 인터럽트가 담당하는 트레이드오프."""
         d = UtteranceDetector(start_ratio=self._start_ratio * 1.6,
-                              min_start_rms=self._min_start_rms * 2.0,
-                              start_ms=300)
+                              min_start_rms=max(self._min_start_rms * 6.0, 720.0),
+                              start_ms=350)
         d._calib = [0.0] * self._calib_frames   # 캘리브레이션 건너뛰기
         d._floor = self._floor
         return d
