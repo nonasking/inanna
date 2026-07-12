@@ -38,7 +38,9 @@ struct ChatView: View {
             Button { showMemories = true } label: { Image(systemName: "brain") }
             Button { showEdit = true } label: { Image(systemName: "slider.horizontal.3") }
         }
-        .fullScreenCover(isPresented: $showCall) {
+        .fullScreenCover(isPresented: $showCall, onDismiss: {
+            Task { await loadHistory() }  // 통화 턴도 대화 기록 — 종료 후 동기화
+        }) {
             CallView(companion: companion)
         }
         .sheet(isPresented: $showMemories) {

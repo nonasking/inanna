@@ -25,6 +25,9 @@ _EMOJI = re.compile(
 )
 _LAUGH = re.compile(r"[ㅋㅎㅠㅜ]{1,}")
 _MD = re.compile(r"[*_`#>~]+")
+# 한자(CJK 표의문자) — 로컬 LLM의 중국어 혼입이 음성으로 읽히는 것 방지.
+# 자막·DB에는 원문이 남는다 (한국어 캐주얼 대화에 한자 표기는 사실상 없음)
+_HAN = re.compile(r"[一-鿿]+")
 
 # 오디오 태그 — v3급 TTS가 소리로 연기하는 지시어 ([laughs], [whispers] 등).
 # LLM이 통화 중 직접 생성할 수 있고, 자막·DB·비지원 엔진에서는 제거한다.
@@ -46,4 +49,5 @@ def clean_for_tts(text: str, keep_tags: bool = False) -> str:
     text = _EMOJI.sub(" ", text)
     text = _LAUGH.sub(" ", text)
     text = _MD.sub(" ", text)
+    text = _HAN.sub(" ", text)
     return re.sub(r"\s+", " ", text).strip()
