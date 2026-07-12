@@ -14,7 +14,7 @@ import time
 
 from fastapi import WebSocket
 
-from .. import config
+from .. import billing, config
 from ..chat import orchestrator
 from ..companion.schema import Companion
 from ..memory import db
@@ -405,6 +405,11 @@ class VoiceSession:
         """문장(묶음) 하나 합성. (오디오, MIME, 원문) — 실패/스킵이면 오디오 b""."""
         if self._engine is None or not clean_for_tts(sentence):
             return b"", "", sentence  # ㅋㅋ만 있는 문장 등 — 자막은 이미 나갔다
+        try:
+            billing.check_tts_quota(self.user_id, engine=self._engine.name)
+        except billing.QuotaExceeded as e:
+            await self.send_event(type="error", message=str(e))
+            return b"", "", sentence  # 텍스트(자막)는 계속 흐른다
         try:
             t0 = time.monotonic()
             async with self._tts_sem:

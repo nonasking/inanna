@@ -252,7 +252,23 @@ def test_billing():
         raise AssertionError("쿼터 초과가 차단돼야 함")
     except billing.QuotaExceeded:
         pass
-    billing.check_tts_quota(uid)  # 음성 쿼터는 별도 — 아직 여유
+    billing.check_tts_quota(uid, engine="edge")  # 음성 쿼터는 별도 — 아직 여유
+    # 일간 상한 — 오늘치 소진 시 월간이 남아도 차단
+    billing.set_tier(uid, "deep")
+    db.add_usage(uid, "c1", "llm", output_tokens=billing.TIERS["deep"]["daily_output_tokens"])
+    try:
+        billing.check_chat_quota(uid)
+        raise AssertionError("일간 상한이 차단돼야 함")
+    except billing.QuotaExceeded as e:
+        assert e.kind == "daily_tokens"
+    # 엔진 게이트 — beta 티어는 유료 TTS 불가
+    billing.set_tier(uid, "beta")
+    try:
+        billing.check_tts_quota(uid, engine="elevenlabs")
+        raise AssertionError("beta 티어에서 elevenlabs가 차단돼야 함")
+    except billing.QuotaExceeded as e:
+        assert e.kind == "engine"
+    billing.check_tts_quota(uid, engine="edge")  # 무료 엔진은 통과
     auth.delete_account(uid)
 
 

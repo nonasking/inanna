@@ -274,7 +274,7 @@ async def _synthesize(voice: Voice, text: str, user: str = "",
         raise HTTPException(400, "이 컴패니언에는 목소리가 설정되지 않았습니다")
     if user:
         try:
-            billing.check_tts_quota(user)
+            billing.check_tts_quota(user, engine=voice.engine)
         except billing.QuotaExceeded as e:
             raise HTTPException(402, str(e))
     try:
@@ -372,7 +372,7 @@ class TTSPreviewRequest(BaseModel):
 @app.post("/api/tts-preview")
 async def tts_preview(req: TTSPreviewRequest, user: str = Depends(current_user)):
     """빌더 미리듣기 — 저장 전 보이스 설정으로 합성."""
-    return await _synthesize(req.voice, req.text)
+    return await _synthesize(req.voice, req.text, user)
 
 
 @app.post("/api/companions/{companion_id}/voice-ref")
