@@ -22,7 +22,13 @@
 2. 접속 주소 + 초대 코드를 전달
 3. 테스터: 가입 → 컴패니언 생성(웹 빌더) → 채팅/통화
 
-## 노출 방식 (택1)
+## 노출 방식 — **B 적용됨 (2026-07-12)**
+
+**공개 주소: `https://macbookpro.tail9f8fdd.ts.net`** (`tailscale funnel --bg 8787`, 443).
+끄기: `tailscale funnel --https=443 off`. 8443 Funnel(IoT MQTT)은 별개로 유지 중.
+적용 시 확인: 공개 200 / 무인증 API 401 / invite_required true.
+
+## 노출 방식 (참고 — 선택지였던 것)
 
 | 방식 | 방법 | 특징 |
 |---|---|---|
