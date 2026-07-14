@@ -157,21 +157,40 @@ def test_auth():
     auth.logout(token)
     assert auth.resolve_token(token) is None, "로그아웃 후 토큰 생존"
     # 초대제: 코드 없으면 거절, 맞으면 통과 + 기록
-    from server import config
-    config.INVITE_CODES = {"beta-code"}
+    db.create_invite("beta-code", "테스트")
     try:
-        try:
-            auth.register("invited@inanna.test", "password123")
-            raise AssertionError("초대 코드 없이 가입되면 안 됨")
-        except ValueError:
-            pass
-        t = auth.register("invited@inanna.test", "password123", invite="beta-code")
-        assert t
-        with db.conn() as c:
-            row = c.execute("SELECT invite FROM accounts WHERE email='invited@inanna.test'").fetchone()
-        assert row["invite"] == "beta-code"
-    finally:
-        config.INVITE_CODES = set()
+        auth.register("invited@inanna.test", "password123")
+        raise AssertionError("초대 코드 없이 가입되면 안 됨")
+    except ValueError:
+        pass
+    t = auth.register("invited@inanna.test", "password123", invite="beta-code")
+    assert t
+    with db.conn() as c:
+        row = c.execute("SELECT invite FROM accounts WHERE email='invited@inanna.test'").fetchone()
+    assert row["invite"] == "beta-code"
+    auth.delete_account(auth.resolve_token(t))
+    with db.conn() as c:
+        c.execute("DELETE FROM invites WHERE code='beta-code'")
+    # 1회용 초대 코드 — 재사용 차단 + 실패 시 계정 롤백 + 삭제 시 반환
+    db.create_invite("once-code", "테스터A")
+    t1 = auth.register("once1@inanna.test", "password123", invite="once-code")
+    assert t1
+    before = len(db.list_invites())
+    try:
+        auth.register("once2@inanna.test", "password123", invite="once-code")
+        raise AssertionError("사용된 코드로 재가입되면 안 됨")
+    except ValueError:
+        pass
+    with db.conn() as c:   # 롤백 확인 — 실패한 가입의 계정이 남으면 안 된다
+        assert c.execute("SELECT 1 FROM accounts WHERE email='once2@inanna.test'"
+                         ).fetchone() is None, "실패한 가입의 계정이 남음"
+    assert len(db.list_invites()) == before
+    used = auth.resolve_token(t1)
+    auth.delete_account(used)          # 삭제 시 코드 반환 → 재초대 가능
+    assert db.claim_invite("once-code", "u999"), "계정 삭제 후 코드가 풀려야 함"
+    with db.conn() as c:
+        c.execute("UPDATE invites SET used_by=NULL WHERE code='once-code'")
+        c.execute("DELETE FROM invites WHERE code='once-code'")
     # 계정 삭제 = 데이터 완전 삭제
     token2 = auth.login("qa@inanna.test", "password123")
     uid2 = auth.resolve_token(token2)

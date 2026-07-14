@@ -18,6 +18,8 @@ from .memory import db
 
 # 페일클로즈(보안 M3): 초대제(=외부 노출 의도)인데 오너 토큰이 비어 있으면
 # 익명 요청이 오너('local')로 폴백해 전 API가 조용히 열린다 — 기동을 거부한다.
+# (invites 테이블 기반 초대제도 동일 — 기동 시점에는 config만 확인 가능하므로
+#  여기서는 env 설정을 본다. 운영 중 발급되는 1회용 코드는 아래 API로 관리한다.)
 if config.INVITE_CODES and not config.AUTH_TOKEN:
     raise RuntimeError(
         "INANNA_INVITE_CODES가 설정됐는데 INANNA_AUTH_TOKEN이 비어 있습니다. "
@@ -25,6 +27,11 @@ if config.INVITE_CODES and not config.AUTH_TOKEN:
 
 app = FastAPI(title="Inanna")
 db.init()
+
+# .env의 INANNA_INVITE_CODES는 '부트스트랩 시드'다 — 1회용 코드로 등록된다.
+# (예전엔 무한 재사용이라 코드 1개 유출 = 계정 무한 생성이었다.)
+for _code in config.INVITE_CODES:
+    db.create_invite(_code, note="env seed")
 
 
 @app.on_event("startup")
@@ -129,7 +136,32 @@ def auth_login(req: Credentials, request: Request):
 @app.get("/api/auth/config")
 def auth_config():
     """가입 화면 구성용 — 초대제 여부 (무인증 공개)."""
-    return {"invite_required": bool(config.INVITE_CODES)}
+    return {"invite_required": bool(config.INVITE_CODES) or bool(db.list_invites())}
+
+
+class InviteRequest(BaseModel):
+    count: int = 1
+    note: str = ""      # 누구에게 줄 코드인지 (운영 메모)
+
+
+@app.post("/api/admin/invites")
+def admin_create_invites(req: InviteRequest, user: str = Depends(current_user)):
+    """1회용 초대 코드 발급 — 셀프호스팅 오너(운영자)만."""
+    if user != config.DEFAULT_USER:
+        raise HTTPException(403, "권한이 없습니다")
+    codes = []
+    for _ in range(max(1, min(req.count, 50))):
+        code = f"inanna-{secrets.token_hex(4)}"
+        db.create_invite(code, req.note)
+        codes.append(code)
+    return {"codes": codes}
+
+
+@app.get("/api/admin/invites")
+def admin_list_invites(user: str = Depends(current_user)):
+    if user != config.DEFAULT_USER:
+        raise HTTPException(403, "권한이 없습니다")
+    return db.list_invites()
 
 
 @app.post("/api/auth/logout")

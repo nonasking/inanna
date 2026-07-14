@@ -43,6 +43,13 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     created_at REAL NOT NULL,
     last_used REAL
 );
+CREATE TABLE IF NOT EXISTS invites (
+    code TEXT PRIMARY KEY,
+    note TEXT,                       -- 누구에게 준 코드인지 (운영 메모)
+    created_at REAL NOT NULL,
+    used_by TEXT,                    -- 사용한 계정 user_id ('u<id>') — NULL이면 미사용
+    used_at REAL
+);
 CREATE TABLE IF NOT EXISTS refusals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT NOT NULL,
@@ -246,6 +253,36 @@ def recent_history(user_id: str, companion_id: str, limit: int = 50) -> list[dic
             (user_id, companion_id, limit),
         ).fetchall()
     return [dict(r) for r in reversed(rows)]
+
+
+def create_invite(code: str, note: str = "") -> None:
+    with conn() as c:
+        c.execute("INSERT OR IGNORE INTO invites (code, note, created_at) VALUES (?, ?, ?)",
+                  (code, note or None, time.time()))
+
+
+def claim_invite(code: str, user_id: str) -> bool:
+    """1회용 초대 코드 소진 — 미사용 코드일 때만 True (원자적)."""
+    with conn() as c:
+        cur = c.execute(
+            "UPDATE invites SET used_by = ?, used_at = ? WHERE code = ? AND used_by IS NULL",
+            (user_id, time.time(), code))
+        return cur.rowcount > 0
+
+
+def release_invite(user_id: str) -> None:
+    """계정 삭제 시 코드를 되돌린다 (재초대 가능하게)."""
+    with conn() as c:
+        c.execute("UPDATE invites SET used_by = NULL, used_at = NULL WHERE used_by = ?",
+                  (user_id,))
+
+
+def list_invites() -> list[dict]:
+    with conn() as c:
+        rows = c.execute(
+            "SELECT code, note, used_by, used_at, created_at FROM invites ORDER BY created_at"
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def growth_stages_passed(user_id: str, companion_id: str) -> set[str]:

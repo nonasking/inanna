@@ -44,9 +44,15 @@ def _issue_token(account_id: int) -> str:
 
 
 def register(email: str, password: str, invite: str = "") -> str:
-    """계정 생성 → 세션 토큰. ValueError는 사용자에게 그대로 보여줄 메시지."""
-    from . import config
-    if config.INVITE_CODES and invite.strip() not in config.INVITE_CODES:
+    """계정 생성 → 세션 토큰. ValueError는 사용자에게 그대로 보여줄 메시지.
+
+    초대 코드는 **1회용**이다 (db.invites) — 코드가 유출돼도 계정을 무한히 만들어
+    쿼터를 새로 받는 우회가 막힌다. 코드 소진은 계정 생성 직후 원자적으로 처리하고,
+    실패하면 계정을 되돌린다.
+    """
+    code = invite.strip()
+    invite_required = bool(db.list_invites())   # 발급된 코드가 하나라도 있으면 초대제
+    if invite_required and not code:
         raise ValueError("지금은 초대 코드가 있어야 가입할 수 있어요")
     email = email.strip().lower()
     if not _EMAIL.match(email):
@@ -59,8 +65,12 @@ def register(email: str, password: str, invite: str = "") -> str:
         cur = c.execute(
             "INSERT INTO accounts (email, password_hash, invite, created_at)"
             " VALUES (?, ?, ?, ?)",
-            (email, _hash_password(password), invite.strip() or None, time.time()))
+            (email, _hash_password(password), code or None, time.time()))
         account_id = cur.lastrowid
+    if invite_required and not db.claim_invite(code, f"u{account_id}"):
+        with db.conn() as c:   # 코드가 없거나 이미 쓰인 코드 — 방금 만든 계정 되돌리기
+            c.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
+        raise ValueError("사용할 수 없는 초대 코드예요 (이미 사용됐거나 잘못된 코드)")
     return _issue_token(account_id)
 
 
@@ -114,6 +124,7 @@ def delete_account(user_id: str) -> None:
     호출측(main)이 컴패니언 파일·참조 오디오 삭제를 함께 수행한다.
     """
     account_id = int(user_id[1:])
+    db.release_invite(user_id)   # 코드를 되돌려 재초대 가능하게
     with db.conn() as c:
         c.execute("DELETE FROM auth_tokens WHERE account_id = ?", (account_id,))
         c.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
