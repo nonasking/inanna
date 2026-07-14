@@ -79,7 +79,8 @@ def _record(user_id: str, companion: Companion, provider) -> None:
 def onboard_stream(user_id: str, companion: Companion,
                    messages: list[dict]) -> Iterator[str]:
     """원형 컴패니언과의 첫 만남 대화 — 무저장(사용량은 기록)."""
-    from .. import billing
+    from .. import billing, safety
+    safety.check_suspended(user_id)
     billing.check_chat_quota(user_id)
     system = compiler.compile_system_prompt(companion, extra_context=ONBOARD_HINT)
     msgs = [m for m in messages
@@ -105,7 +106,8 @@ def extract(user_id: str, companion: Companion, messages: list[dict]) -> dict:
     prompt = _EXTRACT_PROMPT.format(
         name=companion.name, template=companion.relationship.template,
         transcript=transcript)
-    from .. import billing
+    from .. import billing, safety
+    safety.check_suspended(user_id)
     billing.check_chat_quota(user_id)
     preferred, fallback = _providers(user_id)
     msg = [{"role": "user", "content": prompt}]

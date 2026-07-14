@@ -43,6 +43,12 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     created_at REAL NOT NULL,
     last_used REAL
 );
+CREATE TABLE IF NOT EXISTS refusals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    companion_id TEXT,
+    ts REAL NOT NULL                 -- 프로바이더가 거절한 사실만 기록 (내용 저장 안 함)
+);
 CREATE TABLE IF NOT EXISTS growth (
     user_id TEXT NOT NULL,
     companion_id TEXT NOT NULL,
@@ -69,6 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_companion ON sessions(user_id, companion_id);
 CREATE INDEX IF NOT EXISTS idx_memories_user_companion ON memories(user_id, companion_id);
 CREATE INDEX IF NOT EXISTS idx_usage_ts ON usage(ts);
+CREATE INDEX IF NOT EXISTS idx_refusals_user ON refusals(user_id, ts);
 """
 
 
@@ -87,7 +94,7 @@ def init():
     with conn() as c:
         c.executescript(SCHEMA)
         # 마이그레이션 — CREATE IF NOT EXISTS는 기존 테이블에 칼럼을 못 더한다
-        for col in ("tier TEXT", "invite TEXT"):
+        for col in ("tier TEXT", "invite TEXT", "suspended_at REAL"):
             try:
                 c.execute(f"ALTER TABLE accounts ADD COLUMN {col}")
             except sqlite3.OperationalError:

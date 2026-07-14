@@ -43,6 +43,7 @@ function authTab(mode) {
   $("auth-form-account").hidden = mode === "token";
   $("auth-form-token").hidden = mode !== "token";
   $("auth-invite-row").hidden = mode !== "register" || $("auth-invite-row").dataset.off === "1";
+  $("auth-terms-row").hidden = mode !== "register";
   $("auth-submit").textContent = { login: "로그인", register: "가입하기", token: "연결" }[mode];
   $("auth-error").textContent = "";
 }
@@ -65,6 +66,7 @@ async function authSubmit() {
           email: $("auth-email").value.trim(),
           password: $("auth-password").value,
           invite: $("auth-invite").value.trim(),
+          agreed: $("auth-agree").checked,
         }),
       });
       const body = await r.json().catch(() => ({}));

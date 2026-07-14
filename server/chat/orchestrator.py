@@ -2,7 +2,7 @@
 import time
 from collections.abc import Iterator
 
-from .. import billing, config
+from .. import billing, config, safety
 from ..companion.schema import Companion
 from ..llm import get_provider
 from ..memory import db, recall, summarizer
@@ -150,6 +150,7 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
     주의: 제너레이터가 완주해야 assistant 응답이 저장된다. 중간에 close()하면
     호출자가 축적분을 직접 저장해야 한다 (음성 인터럽트 경로).
     """
+    safety.check_suspended(user_id)    # 정지 계정 차단 (셀프호스팅 오너는 통과)
     billing.check_chat_quota(user_id)  # 계정 유저 월간 쿼터 (셀프호스팅은 통과)
 
     # 관계 진행(오랜만/기념일)은 이번 메시지 저장 전 상태 기준으로 계산.
@@ -210,6 +211,9 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
         db.add_usage(user_id, companion.id, "llm",
                      provider=provider.name, model=provider.model,
                      **provider.last_usage)
+    # 프로바이더가 안전 정책으로 거절했으면 '사실'만 기록 (내용 판정은 하지 않는다)
+    if getattr(provider, "last_refusal", False):
+        safety.record_refusal(user_id, companion.id)
 
 
 def preview_stream(user_id: str, companion: Companion,
@@ -219,6 +223,7 @@ def preview_stream(user_id: str, companion: Companion,
     보안(H1): 요청 본문의 Companion.model은 계정 유저에게는 무시된다 —
     티어가 모델을 강제하고, 사용량도 기록한다 (무기록 우회 방지).
     """
+    safety.check_suspended(user_id)
     billing.check_chat_quota(user_id)
     system = compiler.compile_system_prompt(
         companion,
@@ -235,3 +240,5 @@ def preview_stream(user_id: str, companion: Companion,
         db.add_usage(user_id, companion.id, "llm",
                      provider=provider.name, model=provider.model,
                      **provider.last_usage)
+    if getattr(provider, "last_refusal", False):
+        safety.record_refusal(user_id, companion.id)

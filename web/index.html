@@ -10,7 +10,7 @@
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/static/icon-192.png">
-<link rel="stylesheet" href="/static/style.css?v=11">
+<link rel="stylesheet" href="/static/style.css?v=12">
 </head>
 <body>
 
@@ -233,6 +233,12 @@
       <label>이메일 <input id="auth-email" type="email" autocomplete="username"></label>
       <label>비밀번호 <input id="auth-password" type="password" autocomplete="current-password"></label>
       <label id="auth-invite-row" hidden>초대 코드 <input id="auth-invite" placeholder="베타 초대 코드"></label>
+      <label id="auth-terms-row" class="auth-terms" hidden>
+        <input type="checkbox" id="auth-agree">
+        <span>대화는 Anthropic 등 AI 제공자를 통해 처리되며, 해당 제공자의
+          <a href="https://www.anthropic.com/legal/aup" target="_blank" rel="noopener">이용정책</a>을 따릅니다.
+          정책에 반하는 이용이 반복되면 계정이 정지될 수 있어요.</span>
+      </label>
     </div>
     <div id="auth-form-token" hidden>
       <label>접속 토큰 <input id="auth-token" type="password" placeholder="INANNA_AUTH_TOKEN"></label>
@@ -256,7 +262,7 @@
   <button class="call-end" onclick="event.stopPropagation(); endCall()">통화 종료</button>
 </section>
 
-<script src="/static/app.js?v=7"></script>
+<script src="/static/app.js?v=8"></script>
 <script src="/static/call.js?v=5"></script>
 </body>
 </html>

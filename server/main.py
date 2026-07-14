@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, billing, config, tts
+from . import auth, billing, config, safety, tts
 from .chat import onboard, orchestrator
 from .companion import card_import, store, templates
 from .companion.schema import Companion, Voice
@@ -102,11 +102,14 @@ class Credentials(BaseModel):
     email: str
     password: str
     invite: str = ""    # 클로즈베타: INANNA_INVITE_CODES 설정 시 필수
+    agreed: bool = False  # 이용약관 동의 (가입 시 필수)
 
 
 @app.post("/api/auth/register")
 def auth_register(req: Credentials, request: Request):
     _rate_limit(request)
+    if not req.agreed:
+        raise HTTPException(400, "이용약관에 동의해야 가입할 수 있어요")
     try:
         token = auth.register(req.email, req.password, invite=req.invite)
     except ValueError as e:
@@ -212,6 +215,8 @@ def _sse(gen):
             yield f"data: {json.dumps({'done': True})}\n\n"
         except billing.QuotaExceeded as e:
             yield f"data: {json.dumps({'error': str(e), 'kind': 'quota'}, ensure_ascii=False)}\n\n"
+        except safety.Suspended as e:
+            yield f"data: {json.dumps({'error': str(e), 'kind': 'quota'}, ensure_ascii=False)}\n\n"
         except Exception as e:
             # 내부 예외 원문은 서버 로그에만 — 클라이언트엔 일반 문구 (보안 L6)
             print(f"[sse error] {type(e).__name__}: {e}", flush=True)
@@ -229,7 +234,10 @@ def chat(companion_id: str, req: ChatRequest, request: Request,
     except FileNotFoundError:
         raise HTTPException(404, "companion not found")
     try:
+        safety.check_suspended(user)
         billing.check_chat_quota(user)  # SSE 시작 전에 깔끔한 402로
+    except safety.Suspended as e:
+        raise HTTPException(403, str(e))
     except billing.QuotaExceeded as e:
         raise HTTPException(402, str(e))
     session_id, _ = orchestrator.ensure_session(user, companion)
@@ -416,6 +424,15 @@ def billing_set_tier(req: TierChange, user: str = Depends(current_user)):
     except ValueError as e:
         raise HTTPException(400, str(e))
     return billing.status(user)
+
+
+@app.post("/api/admin/unsuspend/{account_id}")
+def admin_unsuspend(account_id: int, user: str = Depends(current_user)):
+    """정지 해제 — 셀프호스팅 오너(운영자)만. 자동 정지는 되돌릴 수 있어야 한다."""
+    if user != config.DEFAULT_USER:
+        raise HTTPException(403, "권한이 없습니다")
+    safety.unsuspend(f"u{account_id}")
+    return {"ok": True}
 
 
 @app.get("/api/usage")

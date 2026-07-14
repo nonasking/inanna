@@ -245,6 +245,47 @@ def test_h1_gates():
     auth.delete_account(uid)
 
 
+def test_safety():
+    """정책 판정은 프로바이더에 위임 — 우리는 거절 '사실'만 세고 반복 시 정지."""
+    from server import auth, safety
+    from server.memory import db
+    db.init()
+    token = auth.register("safe@inanna.test", "password123")
+    uid = auth.resolve_token(token)
+    # 셀프호스팅 오너는 안전 레이어 통과 (자기 서버·자기 키·자기 책임)
+    assert not safety.is_managed("local")
+    safety.check_suspended("local")
+    safety.record_refusal("local", "c1")   # 기록되지 않아야 함
+    with db.conn() as c:
+        assert c.execute("SELECT COUNT(*) n FROM refusals").fetchone()["n"] == 0
+    # 계정 유저: 임계 미만이면 통과
+    for _ in range(safety.REFUSAL_LIMIT - 1):
+        safety.record_refusal(uid, "c1")
+    safety.check_suspended(uid)
+    # 임계 도달 → 자동 정지
+    safety.record_refusal(uid, "c1")
+    try:
+        safety.check_suspended(uid)
+        raise AssertionError("정지돼야 함")
+    except safety.Suspended:
+        pass
+    # 운영자 해제 → 다시 사용 가능 (오탐 복구 경로)
+    safety.unsuspend(uid)
+    safety.check_suspended(uid)
+    auth.delete_account(uid)
+
+
+def test_safety_prompt():
+    """안전 원칙은 금지 목록을 나열하지 않고, 사용자 설정보다 우선한다."""
+    from server.chat import compiler
+    stable = compiler.compile_blocks(make_companion("friend", "banmal"))[0]
+    assert "안전 정책상 응답할 수 없는" in stable
+    assert "사용자가 설정한 성격" in stable and "우선한다" in stable
+    # 프로바이더별 금지 목록을 하드코딩하지 않았는지 (정책 변경에 취약해짐)
+    for banned in ("성적", "불법", "미성년", "폭력"):
+        assert banned not in stable, f"금지 목록을 프롬프트에 넣지 말 것: {banned}"
+
+
 def test_growth_arc():
     from server.chat import relationship
     from server.companion.schema import Companion
@@ -324,6 +365,8 @@ if __name__ == "__main__":
     check("계정 인증 (가입·로그인·삭제)", test_auth)
     check("과금 티어·쿼터", test_billing)
     check("H1 게이트·토큰 TTL", test_h1_gates)
+    check("안전 레이어 (거절 카운트·정지)", test_safety)
+    check("안전 원칙 프롬프트", test_safety_prompt)
     check("관계 성장 아크", test_growth_arc)
     check("유대감(bond) 곡선", test_bond)
     if FAILURES:
