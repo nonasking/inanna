@@ -96,6 +96,17 @@ class VoiceSession:
         except Exception:
             pass
 
+    async def _warmup_llm(self) -> None:
+        """통화 첫 턴의 지연 제거 — 실제 대화 프롬프트로 KV 캐시를 미리 채운다.
+        사용자가 첫 마디를 하는 동안 백그라운드에서 끝난다."""
+        hint = VOICE_HINT
+        voice = self.companion.voice
+        if voice.engine == "elevenlabs" and "v3" in (voice.model or config.ELEVENLABS_MODEL):
+            hint += V3_TAG_HINT
+        await asyncio.get_running_loop().run_in_executor(
+            None, orchestrator.prefill, self.user_id, self.companion,
+            self.session_id, hint)
+
     async def run(self) -> None:
         from ..chat import relationship
         await self.send_event(
@@ -106,6 +117,7 @@ class VoiceSession:
         )
         if self.companion.voice.engine == "sovits":
             asyncio.create_task(self._warmup())
+        asyncio.create_task(self._warmup_llm())
         await self.set_state("idle")
         try:
             while True:

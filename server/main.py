@@ -27,6 +27,15 @@ app = FastAPI(title="Inanna")
 db.init()
 
 
+@app.on_event("startup")
+async def _warm_llm() -> None:
+    """로컬 모델을 미리 올려둔다 — 첫 대화가 콜드 로드(수 초)를 맞지 않게."""
+    provider = get_provider()
+    if not hasattr(provider, "warmup"):
+        return
+    asyncio.get_running_loop().run_in_executor(None, provider.warmup)
+
+
 @app.middleware("http")
 async def static_no_cache(request, call_next):
     """폰 브라우저(PWA)가 옛 JS를 캐시해 신구 코드가 섞이는 사고 방지 +

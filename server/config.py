@@ -41,6 +41,15 @@ PROVIDER = os.environ.get("INANNA_PROVIDER", "anthropic")  # anthropic | ollama 
 ANTHROPIC_MODEL = os.environ.get("INANNA_MODEL", "claude-sonnet-5")
 OLLAMA_MODEL = os.environ.get("INANNA_OLLAMA_MODEL", "qwen2.5:7b")
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+# 로컬 모델 지연의 실체(2026-07-12 실측): 기본 keep_alive 5분이 지나면 모델이
+# 언로드되어 재요청 시 콜드 로드 5.4s + 프롬프트 재처리 11s가 붙는다(웜+프리픽스
+# 캐시 히트면 0.2s). 상주시키면 캐시까지 살아남아 지연이 사라진다.
+# ollama는 keep_alive를 숫자(초) 또는 "5m" 같은 duration으로 받는다 —
+# 문자열 "-1"은 400(missing unit)이므로 숫자 -1(무한 상주)로 보낸다
+_KA = os.environ.get("INANNA_OLLAMA_KEEP_ALIVE", "-1")
+OLLAMA_KEEP_ALIVE: object = int(_KA) if _KA.lstrip("-").isdigit() else _KA
+# 기본 창(4096)은 시스템+이력+기억에 빠듯해 프리픽스가 밀리고 기억이 잘린다
+OLLAMA_NUM_CTX = int(os.environ.get("INANNA_OLLAMA_NUM_CTX", "8192"))
 # OpenAI 호환 엔드포인트 (OpenAI/OpenRouter/Groq/LM Studio/llama.cpp/vLLM …)
 OPENAI_BASE_URL = os.environ.get("INANNA_OPENAI_BASE_URL", "https://api.openai.com/v1")
 OPENAI_API_KEY = os.environ.get("INANNA_OPENAI_API_KEY",
@@ -56,10 +65,12 @@ CHAT_MAX_TOKENS = int(os.environ.get("INANNA_CHAT_MAX_TOKENS", "2048"))
 # 이 시간(초) 넘게 조용하면 다음 메시지는 새 세션으로 취급
 SESSION_GAP_SECONDS = int(os.environ.get("INANNA_SESSION_GAP", str(4 * 3600)))
 # 프롬프트에 넣는 현재 세션 최대 턴 수 / 주입할 기억 개수 (최근 + 관련)
-HISTORY_LIMIT = 40
+HISTORY_LIMIT = 24         # 프롬프트가 커질수록 캐시 미스 시 비용이 커진다
 MEMORY_LIMIT = 10          # (하위호환) history 엔드포인트 등에서 사용
 MEMORY_RECENT = 5          # 최근 기억 — 항상 주입
 MEMORY_RELEVANT = 5        # 현재 발화와 관련 높은 기억 — BM25 검색
+# 세션 안에서 누적되는 기억의 상한 (프롬프트 무한 성장 방지 — orchestrator 참고)
+SESSION_MEMORY_CAP = 12
 
 VOICES_DIR = Path(os.environ.get("INANNA_VOICES_DIR", ROOT / "voices"))
 # GPT-SoVITS api_v2 서버 주소 (보이스 클로닝용 원격/로컬 TTS 워커)
