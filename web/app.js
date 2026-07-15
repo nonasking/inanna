@@ -420,6 +420,7 @@ function applyTemplate() {
 
 function openBuilder(companion = null) {
   editingId = companion ? companion.id : null;
+  $("builder-farewell").hidden = !editingId;   // 기존 컴패니언만 작별 가능
   $("builder-title").textContent = companion ? `${companion.name} 편집` : "새 컴패니언";
   const sel = $("f-template");
   sel.innerHTML = TEMPLATES.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
@@ -608,6 +609,25 @@ function validateVoice(voice) {
     return false;
   }
   return true;
+}
+
+async function farewellCompanion() {
+  if (!editingId) return;
+  const name = $("f-name").value.trim() || "이 컴패니언";
+  // 기억 개수를 세어 무게감 있게 확인 (관계 언어)
+  let n = 0;
+  try {
+    const mems = await (await api(`/api/companions/${editingId}/memories`)).json();
+    n = Array.isArray(mems) ? mems.length : 0;
+  } catch {}
+  const msg = n > 0
+    ? `${name}와 작별할까요?\n함께 쌓은 기억 ${n}개가 모두 사라지고, 되돌릴 수 없어요.`
+    : `${name}와 작별할까요? 되돌릴 수 없어요.`;
+  if (!confirm(msg)) return;
+  const r = await api(`/api/companions/${editingId}`, { method: "DELETE" });
+  if (!r.ok) { alert("삭제 실패: " + await r.text()); return; }
+  editingId = null;
+  showView("list");
 }
 
 async function saveCompanion() {

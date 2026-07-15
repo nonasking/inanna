@@ -224,3 +224,7 @@ button.small { padding: 8px 10px; }
 .auth-terms { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--dim); }
 .auth-terms input { width: auto; margin-top: 3px; flex-shrink: 0; }
 .auth-terms a { color: var(--accent); }
+
+/* 작별하기 (파괴적 액션) */
+button.ghost.danger { border-color: #6a2b3a; color: #e88; }
+@media (hover: hover) { button.ghost.danger:hover { background: #3a1822; filter: none; } }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ChatView: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.dismiss) private var dismiss
     @State var companion: Companion
 
     @State private var messages: [ChatMessage] = []
@@ -47,7 +48,9 @@ struct ChatView: View {
             MemoriesView(companion: companion)
         }
         .sheet(isPresented: $showEdit) {
-            CompanionEditView(companion: companion) { companion = $0 }
+            CompanionEditView(companion: companion,
+                              onSaved: { companion = $0 },
+                              onDeleted: { dismiss() })
         }
         .task { await loadHistory() }
     }

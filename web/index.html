@@ -10,7 +10,7 @@
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/static/icon-192.png">
-<link rel="stylesheet" href="/static/style.css?v=12">
+<link rel="stylesheet" href="/static/style.css?v=13">
 </head>
 <body>
 
@@ -131,6 +131,11 @@
         </select>
       </label>
       <label>모델 이름 <input id="f-model-name" placeholder="비우면 기본 모델"></label>
+    </div>
+
+    <div id="builder-farewell" hidden style="margin-top:32px; border-top:1px solid var(--panel2); padding-top:20px">
+      <button class="ghost danger" style="width:100%" onclick="farewellCompanion()">작별하기</button>
+      <p class="hint" style="text-align:center; margin-top:8px">함께한 기억이 모두 사라지고, 되돌릴 수 없어요.</p>
     </div>
   </div>
 
@@ -262,7 +267,7 @@
   <button class="call-end" onclick="event.stopPropagation(); endCall()">통화 종료</button>
 </section>
 
-<script src="/static/app.js?v=9"></script>
+<script src="/static/app.js?v=10"></script>
 <script src="/static/call.js?v=5"></script>
 </body>
 </html>

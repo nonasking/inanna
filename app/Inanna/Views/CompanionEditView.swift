@@ -7,10 +7,12 @@ struct CompanionEditView: View {
 
     @State var companion: Companion
     var onSaved: (Companion) -> Void = { _ in }
+    var onDeleted: () -> Void = {}
 
     @State private var voices: [VoiceOption] = []
     @State private var busy = false
     @State private var error: String?
+    @State private var confirmFarewell = false
 
     private let speechLevels = [("banmal", "반말"), ("jondaemal", "존댓말"), ("mixed", "섞임")]
     private let engines = [("", "없음 (텍스트만)"), ("edge", "프리셋 보이스"),
@@ -109,6 +111,13 @@ struct CompanionEditView: View {
                          + (error.map { "\n⚠ \($0)" } ?? ""))
                         .foregroundStyle(error == nil ? Color.secondary : .red)
                 }
+
+                Section {
+                    Button("작별하기", role: .destructive) { confirmFarewell = true }
+                        .frame(maxWidth: .infinity)
+                } footer: {
+                    Text("함께한 기억이 모두 사라지고, 되돌릴 수 없어요.")
+                }
             }
             .navigationTitle("\(companion.name) 편집")
             .navigationBarTitleDisplayMode(.inline)
@@ -121,6 +130,29 @@ struct CompanionEditView: View {
                 }
             }
             .task { await loadVoices() }
+            .confirmationDialog("\(companion.name)와 작별할까요?",
+                                isPresented: $confirmFarewell, titleVisibility: .visible) {
+                Button("작별하기", role: .destructive) { farewell() }
+                Button("취소", role: .cancel) {}
+            } message: {
+                Text("함께한 기억이 모두 사라지고, 되돌릴 수 없어요.")
+            }
+        }
+    }
+
+    private func farewell() {
+        guard let api = app.api else { return }
+        busy = true
+        Task {
+            defer { busy = false }
+            do {
+                _ = try await api.send("api/companions/\(companion.id)", method: "DELETE")
+                await app.loadCompanions()
+                onDeleted()
+                dismiss()
+            } catch {
+                self.error = error.localizedDescription
+            }
         }
     }
 
