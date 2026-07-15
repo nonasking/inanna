@@ -4,7 +4,7 @@ import SwiftUI
 struct SetupView: View {
     @EnvironmentObject var app: AppState
     @State private var url = "https://macbookpro.tail9f8fdd.ts.net"
-    @State private var mode: Mode = .token
+    @State private var mode: Mode = .account   // 테스터 대부분 계정 — 토큰은 오너용
     @State private var token = ""
     @State private var email = ""
     @State private var password = ""
@@ -12,8 +12,8 @@ struct SetupView: View {
     @State private var error: String?
 
     enum Mode: String, CaseIterable {
-        case token = "접속 토큰"
         case account = "계정"
+        case token = "접속 토큰"
     }
 
     var body: some View {

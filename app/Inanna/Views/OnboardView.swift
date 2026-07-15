@@ -104,9 +104,12 @@ struct OnboardView: View {
     }
 
     private func slug(_ s: String) -> String {
-        let ascii = s.lowercased().unicodeScalars
-            .map { CharacterSet.alphanumerics.contains($0) ? String($0) : "-" }
-            .joined().trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        // 서버 id 규칙은 [a-zA-Z0-9_-]. CharacterSet.alphanumerics는 한글도
+        // '문자'로 인정하므로 쓰면 안 된다 — ASCII 영숫자만 남기고, 한글 이름처럼
+        // 남는 게 없으면 랜덤 id로 (이름 자체는 companion.name에 그대로 보존된다).
+        let allowed = Set("abcdefghijklmnopqrstuvwxyz0123456789")
+        let ascii = String(s.lowercased().map { allowed.contains($0) ? $0 : "-" })
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
         return ascii.isEmpty ? "c-\(Int(Date().timeIntervalSince1970) % 1000000)" : ascii
     }
 

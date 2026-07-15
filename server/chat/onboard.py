@@ -137,10 +137,23 @@ def extract(user_id: str, companion: Companion, messages: list[dict]) -> dict:
     }
 
 
+_ID_OK = re.compile(r"[a-z0-9_-]{1,64}")
+
+
+def _safe_id(companion: Companion) -> str:
+    """클라이언트가 준 id가 서버 규칙([a-z0-9_-])에 안 맞으면(한글 이름 등)
+    안전한 id를 생성한다. 이름은 companion.name에 그대로 남는다."""
+    if _ID_OK.fullmatch(companion.id):
+        return companion.id
+    import secrets
+    return f"c-{secrets.token_hex(4)}"
+
+
 def complete(user_id: str, companion: Companion, messages: list[dict],
              first_memory: str) -> None:
     """저장 + 온보딩 대화를 첫 세션·첫 기억으로 남긴다."""
     from ..companion import store
+    companion.id = _safe_id(companion)   # 한글 이름 등으로 온 잘못된 id 방어
     store.save(user_id, companion)
     sid = db.create_session(user_id, companion.id)
     for m in messages:

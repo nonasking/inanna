@@ -29,11 +29,16 @@ let authMode = "login";
 async function showAuth() {
   if (!$("view-auth").hidden) return;
   $("view-auth").hidden = false;
+  let inviteRequired = false;
   try {
     const cfg = await (await fetch("/api/auth/config")).json();
-    $("auth-invite-row").dataset.off = cfg.invite_required ? "0" : "1";
+    inviteRequired = !!cfg.invite_required;
   } catch {}
-  authTab(authMode);
+  $("auth-invite-row").dataset.off = inviteRequired ? "0" : "1";
+  // 초대제(베타 공개)면 '토큰' 탭은 오너용이라 숨긴다 — 테스터 혼동 방지.
+  // 가입을 기본 탭으로 (처음 온 사람은 대부분 가입).
+  $("auth-tab-token").hidden = inviteRequired;
+  authTab(inviteRequired ? "register" : authMode);
 }
 
 function authTab(mode) {
