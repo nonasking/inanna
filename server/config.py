@@ -38,7 +38,7 @@ DEFAULT_USER = "local"
 # ---------- LLM 프로바이더 ----------
 # 전역 기본. 컴패니언별 오버라이드(companion.model)가 우선한다.
 PROVIDER = os.environ.get("INANNA_PROVIDER", "anthropic")  # anthropic | ollama | openai
-ANTHROPIC_MODEL = os.environ.get("INANNA_MODEL", "claude-sonnet-5")
+ANTHROPIC_MODEL = os.environ.get("INANNA_MODEL", "claude-haiku-4-5-20251001")
 OLLAMA_MODEL = os.environ.get("INANNA_OLLAMA_MODEL", "qwen2.5:7b")
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 # 로컬 모델 지연의 실체(2026-07-12 실측): 기본 keep_alive 5분이 지나면 모델이
