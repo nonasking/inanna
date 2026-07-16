@@ -264,6 +264,20 @@ def test_h1_gates():
     auth.delete_account(uid)
 
 
+def test_presets():
+    from server.companion import presets
+    ps = presets.load_presets()
+    assert len(ps) >= 9, f"프리셋 {len(ps)}개"
+    lovers = [c for c in ps.values() if c.relationship.template == "lover"]
+    assert len(lovers) == 2, "lover 프리셋은 둘"
+    doha = presets.get("preset-doha")
+    assert doha and doha.name == "도하" and doha.persona.first_message
+    assert doha.voice.engine == "edge"  # 베타 무료 엔진
+    # 요약은 전체 페르소나를 노출하지 않는다 (concept만)
+    s = presets.summaries()
+    assert len(s) == len(ps) and all("description" not in x for x in s)
+
+
 def test_safety():
     """정책 판정은 프로바이더에 위임 — 우리는 거절 '사실'만 세고 반복 시 정지."""
     from server import auth, safety
@@ -384,6 +398,7 @@ if __name__ == "__main__":
     check("계정 인증 (가입·로그인·삭제)", test_auth)
     check("과금 티어·쿼터", test_billing)
     check("H1 게이트·토큰 TTL", test_h1_gates)
+    check("프리셋 로드", test_presets)
     check("안전 레이어 (거절 카운트·정지)", test_safety)
     check("안전 원칙 프롬프트", test_safety_prompt)
     check("관계 성장 아크", test_growth_arc)

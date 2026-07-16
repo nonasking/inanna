@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from . import auth, billing, config, safety, tts
 from .chat import onboard, orchestrator
-from .companion import card_import, store, templates
+from .companion import card_import, presets, store, templates
 from .companion.schema import Companion, Voice
 from .llm import get_provider
 from .memory import db
@@ -302,6 +302,59 @@ def history(companion_id: str, limit: int = 50, user: str = Depends(current_user
                     rows = rows + [{"role": "assistant", "content": hello,
                                     "ts": _time.time()}]
     return {"messages": rows}
+
+
+# ---------- 프리셋 (체험용 미리 설정 컴패니언) ----------
+
+class PreviewMessages(BaseModel):
+    messages: list[dict] = []
+
+
+@app.get("/api/presets")
+def list_presets(user: str = Depends(current_user)):
+    """목록 카드 — 요약만 (전체 페르소나는 체험/데려오기에서 서버가 다룬다)."""
+    return presets.summaries()
+
+
+@app.post("/api/presets/{preset_id}/preview")
+def preview_preset(preset_id: str, req: PreviewMessages, request: Request,
+                   user: str = Depends(current_user)):
+    """무저장 체험 대화 — 서버가 프리셋을 로드해 스트리밍 (쿼터·티어·안전 적용)."""
+    _llm_rate_limit(request, user)
+    c = presets.get(preset_id)
+    if not c:
+        raise HTTPException(404, "preset not found")
+    # 첫 턴(사용자 발화 없음)은 손으로 쓴 first_message를 바로 내준다 (LLM 비용 0).
+    if not any(m.get("role") == "user" for m in req.messages):
+        greeting = (c.persona.first_message or "").replace("{{char}}", c.name) \
+            .replace("{{user}}", c.relationship.calls_me or "너")
+
+        def _greet():
+            if greeting:
+                yield f"data: {json.dumps({'delta': greeting}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        return StreamingResponse(_greet(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache"})
+    return _sse(orchestrator.preview_stream(user, c, req.messages))
+
+
+@app.post("/api/presets/{preset_id}/adopt")
+def adopt_preset(preset_id: str, user: str = Depends(current_user)):
+    """프리셋을 내 컴패니언으로 데려온다 — 새 id로 복사 + '처음 만난 날' 기억 시드."""
+    import datetime
+    import secrets
+    c = presets.get(preset_id)
+    if not c:
+        raise HTTPException(404, "preset not found")
+    c = c.model_copy(deep=True)
+    c.id = f"c-{secrets.token_hex(4)}"     # 사용자별 새 인스턴스 (프리셋 원본은 불변)
+    store.save(user, c)
+    sid = db.create_session(user, c.id)
+    db.mark_summarized(sid)
+    today = datetime.date.today().isoformat()
+    db.add_memory(user, c.id, f"[{today}] {c.name}를 처음 만난 날 — 서로 알아가기 시작했다.",
+                  source_session=sid)
+    return {"ok": True, "id": c.id, "name": c.name}
 
 
 # ---------- 첫 만남 온보딩 (대화로 컴패니언이 형성된다) ----------

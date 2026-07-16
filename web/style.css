@@ -228,3 +228,6 @@ button.small { padding: 8px 10px; }
 /* 작별하기 (파괴적 액션) */
 button.ghost.danger { border-color: #6a2b3a; color: #e88; }
 @media (hover: hover) { button.ghost.danger:hover { background: #3a1822; filter: none; } }
+
+/* 추천 컴패니언 카드의 관계 라벨 */
+.card .name .rel { font-weight: 400; }

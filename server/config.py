@@ -24,6 +24,7 @@ _load_dotenv(ROOT / ".env")
 
 COMPANIONS_DIR = Path(os.environ.get("INANNA_COMPANIONS_DIR", ROOT / "companions"))
 TEMPLATES_DIR = ROOT / "templates"
+PRESETS_DIR = ROOT / "presets"    # 체험용 프리셋 컴패니언 (커밋됨, 오리지널)
 WEB_DIR = ROOT / "web"
 DB_PATH = Path(os.environ.get("INANNA_DB", ROOT / "inanna.db"))
 

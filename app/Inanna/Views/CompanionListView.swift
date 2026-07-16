@@ -3,6 +3,7 @@ import SwiftUI
 struct CompanionListView: View {
     @EnvironmentObject var app: AppState
     @State private var showOnboard = false
+    @State private var showPresets = false
     @State private var navPath = NavigationPath()
 
     var body: some View {
@@ -25,6 +26,7 @@ struct CompanionListView: View {
             .navigationTitle("Inanna")
             .navigationDestination(for: Companion.self) { ChatView(companion: $0) }
             .toolbar {
+                Button { showPresets = true } label: { Image(systemName: "sparkles") }
                 Button { showOnboard = true } label: { Image(systemName: "plus") }
                 Menu {
                     Button("로그아웃", role: .destructive) { app.signOut() }
@@ -36,6 +38,9 @@ struct CompanionListView: View {
                 OnboardView { created in
                     navPath.append(created)  // 첫 만남 직후 바로 대화로 (기획 #8)
                 }
+            }
+            .sheet(isPresented: $showPresets) {
+                PresetsView { adopted in navPath.append(adopted) }  // 데려온 뒤 바로 대화
             }
             .refreshable { await app.loadCompanions() }
             .task { await app.loadCompanions() }

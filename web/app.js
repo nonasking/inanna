@@ -86,6 +86,68 @@ async function authSubmit() {
   }
 }
 
+/* ---------- 추천 컴패니언 (프리셋) ---------- */
+const pc = { id: null, name: "", messages: [] };
+const REL_LABEL = { lover: "연인", friend: "친구", "younger-sibling": "동생",
+  "older-sibling": "누나/형", mother: "어머니", father: "아버지",
+  child: "자식", assistant: "비서" };
+
+async function openPresets() {
+  showView("presets");
+  const el = $("presets-list");
+  el.innerHTML = `<div class="empty">불러오는 중…</div>`;
+  let list = [];
+  try { list = await (await api("/api/presets")).json(); } catch {}
+  el.innerHTML = "";
+  for (const p of list) {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div class="avatar">${escapeHtml(p.name[0] || "?")}</div>
+      <div class="meta">
+        <div class="name">${escapeHtml(p.name)} <span class="rel">· ${escapeHtml(REL_LABEL[p.template] || p.template)}</span></div>
+        <div class="rel">${escapeHtml(p.concept || "")}</div>
+      </div>`;
+    div.onclick = () => openPresetChat(p);
+    el.appendChild(div);
+  }
+}
+
+function openPresetChat(p) {
+  pc.id = p.id; pc.name = p.name; pc.messages = [];
+  $("pc-title").textContent = `${p.name} 체험`;
+  $("pc-log").innerHTML = "";
+  showView("preset-chat");
+  // 컴패니언이 먼저 말을 건다 (첫 인사)
+  presetTurn();
+}
+
+async function presetTurn() {
+  const text = await runStream($("pc-log"), `/api/presets/${pc.id}/preview`,
+                               { messages: pc.messages });
+  if (text) pc.messages.push({ role: "assistant", content: text });
+}
+
+async function sendPresetChat() {
+  const input = $("pc-input");
+  const text = input.value.trim();
+  if (!text || busy) return;
+  input.value = "";
+  addMsg($("pc-log"), "user", text);
+  pc.messages.push({ role: "user", content: text });
+  await presetTurn();
+}
+
+async function adoptPreset() {
+  if (!pc.id) return;
+  if (!confirm(`${pc.name}를 데려올까요?\n내 컴패니언 목록에 추가되고, 이제부터 나만의 관계로 이어져요.`)) return;
+  const r = await api(`/api/presets/${pc.id}/adopt`, { method: "POST" });
+  if (!r.ok) { alert("데려오기 실패: " + await r.text()); return; }
+  const { id, name } = await r.json();
+  await loadList();
+  openChat(id, name);
+}
+
 /* ---------- 첫 만남 온보딩 ---------- */
 const ob = { proto: null, messages: [], userTurns: 0, extracted: null, voiceId: "" };
 
@@ -255,7 +317,7 @@ function obTune() {
 const DESKTOP = window.matchMedia("(min-width: 1024px)");
 
 function showView(name) {
-  for (const v of ["list", "builder", "chat", "memories", "onboard"]) $(`view-${v}`).hidden = v !== name;
+  for (const v of ["list", "builder", "chat", "memories", "onboard", "presets", "preset-chat"]) $(`view-${v}`).hidden = v !== name;
   if (DESKTOP.matches && name !== "list") $("view-list").hidden = false;
   if (name === "list") loadList();
   markActiveCard();

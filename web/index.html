@@ -10,7 +10,7 @@
 <link rel="manifest" href="/static/manifest.json">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/static/icon-192.png">
-<link rel="stylesheet" href="/static/style.css?v=13">
+<link rel="stylesheet" href="/static/style.css?v=14">
 </head>
 <body>
 
@@ -23,9 +23,35 @@
   <div id="companion-list" class="list"></div>
   <div class="list-actions">
     <button class="primary" onclick="openOnboard()">+ 새 컴패니언</button>
+    <button class="ghost" onclick="openPresets()">✨ 추천</button>
     <label class="ghost file-btn">카드 임포트
       <input type="file" id="card-file" accept=".png,.json" hidden>
     </label>
+  </div>
+</section>
+
+<!-- 추천 컴패니언 (프리셋) — 체험 대화 후 데려오기 -->
+<section id="view-presets" class="view" hidden>
+  <header class="bar">
+    <button class="ghost" onclick="showView('list')">←</button>
+    <h2>추천 컴패니언</h2>
+    <span></span>
+  </header>
+  <p class="hint" style="padding:0 16px">먼저 대화해보고, 마음에 들면 데려올 수 있어요. 데려온 뒤엔 내 것처럼 바꿔도 돼요.</p>
+  <div id="presets-list" class="list"></div>
+</section>
+
+<!-- 프리셋 체험 대화 (무저장) -->
+<section id="view-preset-chat" class="view chat-pane" hidden>
+  <header class="bar">
+    <button class="ghost" onclick="openPresets()">←</button>
+    <h2 id="pc-title"></h2>
+    <button class="primary" onclick="adoptPreset()">데려오기</button>
+  </header>
+  <div id="pc-log" class="chat-log"></div>
+  <div class="chat-input">
+    <textarea id="pc-input" rows="1" placeholder="편하게 말 걸어보세요 (저장되지 않아요)"></textarea>
+    <button class="primary" id="pc-send" onclick="sendPresetChat()">전송</button>
   </div>
 </section>
 
@@ -267,7 +293,7 @@
   <button class="call-end" onclick="event.stopPropagation(); endCall()">통화 종료</button>
 </section>
 
-<script src="/static/app.js?v=10"></script>
+<script src="/static/app.js?v=11"></script>
 <script src="/static/call.js?v=5"></script>
 </body>
 </html>
