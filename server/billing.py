@@ -52,8 +52,10 @@ TIERS = {
 DEFAULT_TIER = os.environ.get("INANNA_DEFAULT_TIER", "lite")
 
 
+# 소진 안내는 '사실 + 리셋 시점'만 — 막힌 순간의 업셀은 반감이 가장 큰 지점이라
+# 티어 안내는 이용 현황 화면에만 둔다 (2026-07 사용량 UX 리서치).
 _QUOTA_MESSAGES = {
-    "tokens": "이번 달 사용량을 다 썼어요. 다음 달에 초기화되거나, 상위 티어로 올릴 수 있어요.",
+    "tokens": "이번 달 대화량을 다 썼어요. 다음 달 1일에 다시 채워져요.",
     "daily_tokens": "오늘 사용량을 다 썼어요. 내일 다시 만나요!",
     "tts": "이번 달 음성 사용량을 다 썼어요. 텍스트 대화는 계속할 수 있어요.",
     "daily_tts": "오늘 음성 사용량을 다 썼어요. 텍스트 대화는 계속할 수 있어요.",
@@ -97,6 +99,12 @@ def _day_start() -> float:
     return datetime(now.year, now.month, now.day, tzinfo=timezone.utc).timestamp()
 
 
+def _next_month_start() -> float:
+    now = datetime.now(timezone.utc)
+    y, m = (now.year + 1, 1) if now.month == 12 else (now.year, now.month + 1)
+    return datetime(y, m, 1, tzinfo=timezone.utc).timestamp()
+
+
 def _usage_since(user_id: str, since: float) -> dict:
     with db.conn() as c:
         row = c.execute(
@@ -131,8 +139,39 @@ def status(user_id: str) -> dict:
                    "daily_output_tokens": spec["daily_output_tokens"],
                    "daily_tts_chars": spec["daily_tts_chars"]},
         "tts_engines": sorted(spec["tts_engines"]),
-        "resets_at": _month_start() + 32 * 86400,  # 대략 다음 달 초 (표시용)
+        "daily_resets_at": _day_start() + 86400,
+        "resets_at": _next_month_start(),
     }
+
+
+NOTICE_FRACTION = 0.8   # 임계 통과 시 한 번만 조용히 알린다 (통신사 80% 룰)
+
+
+def quota_notice(user_id: str, added_tokens: int) -> str | None:
+    """방금 턴이 80% 임계를 '넘겼을' 때만 안내 문구 — 그 외엔 None.
+
+    add_usage 이후에 호출한다. 통과 순간에만 반환하므로 하루/한 달에 한 번만
+    뜬다 — 상시 카운터는 매 발화를 과금 미터로 만들어 몰입을 깬다.
+    """
+    if not is_metered(user_id) or added_tokens <= 0:
+        return None
+    spec = TIERS[get_tier(user_id)]
+    day = day_usage(user_id)["output_tokens"]
+    month = month_usage(user_id)["output_tokens"]
+    if day - added_tokens < spec["daily_output_tokens"] * NOTICE_FRACTION <= day:
+        return "오늘 나눌 수 있는 대화가 얼마 남지 않았어요."
+    if month - added_tokens < spec["monthly_output_tokens"] * NOTICE_FRACTION <= month:
+        return "이번 달 대화가 얼마 남지 않았어요."
+    return None
+
+
+def chat_tokens_left(user_id: str) -> int | None:
+    """오늘/이번 달 중 먼저 소진되는 쪽의 남은 출력 토큰. 무과금 유저는 None."""
+    if not is_metered(user_id):
+        return None
+    spec = TIERS[get_tier(user_id)]
+    return min(spec["daily_output_tokens"] - day_usage(user_id)["output_tokens"],
+               spec["monthly_output_tokens"] - month_usage(user_id)["output_tokens"])
 
 
 def effective_model(user_id: str) -> tuple[str, str] | None:

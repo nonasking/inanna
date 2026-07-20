@@ -128,6 +128,7 @@ def prefill(user_id: str, companion: Companion, session_id: int,
         extra = ctx["situation"]
         if extra_context:
             extra = f"{extra}\n{extra_context}" if extra else extra_context
+        extra = _with_farewell(user_id, extra)   # chat_stream과 프리픽스 일치
         system = compiler.compile_blocks(companion, memories=ctx["memories"],
                                          extra_context=extra)
         history = _trim_history(_to_llm_messages(db.session_messages(session_id)))
@@ -143,9 +144,32 @@ def prefill(user_id: str, companion: Companion, session_id: int,
         pass
 
 
+# 남은 출력 토큰이 이 이하면 컴패니언이 자연스럽게 하루를 마무리하게 한다
+# (2~3턴 분량). 차단 직전의 "뚝 끊김"을 서사적 마무리로 바꾸는 장치 —
+# 제한을 캐릭터의 거절이 아니라 '오늘은 여기까지'라는 관계 이벤트로.
+FAREWELL_TOKENS = 800
+
+_FAREWELL_HINT = (
+    "오늘 함께할 수 있는 대화가 곧 끝난다. 지금부터는 자연스럽게, 다정하게 "
+    "하루를 마무리하는 쪽으로 대화를 이끌어라 — 내일 다시 만나자는 기대를 담아서. "
+    "사용량·제한·요금 같은 시스템 사정은 절대 입에 담지 않는다.")
+
+
+def _with_farewell(user_id: str, extra: str) -> str:
+    left = billing.chat_tokens_left(user_id)
+    if left is None or left > FAREWELL_TOKENS:
+        return extra
+    return f"{extra}\n{_FAREWELL_HINT}" if extra else _FAREWELL_HINT
+
+
 def chat_stream(user_id: str, companion: Companion, session_id: int,
-                user_message: str, extra_context: str = "") -> Iterator[str]:
+                user_message: str, extra_context: str = "",
+                events: dict | None = None) -> Iterator[str]:
     """사용자 메시지 처리 → 응답 델타 스트림. 완료 시 DB에 기록.
+
+    events: 요청별 부가 신호를 받는 dict — 쿼터 80% 통과 시 events["notice"]에
+    조용한 안내 문구가 담긴다 (텍스트 채팅 전용; 음성 경로는 넘기지 않아 TTS로
+    읽히지 않는다).
 
     주의: 제너레이터가 완주해야 assistant 응답이 저장된다. 중간에 close()하면
     호출자가 축적분을 직접 저장해야 한다 (음성 인터럽트 경로).
@@ -178,6 +202,9 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
     extra = ctx["situation"]
     if extra_context:
         extra = f"{extra}\n{extra_context}" if extra else extra_context
+    # 잔량이 바닥에 가까우면 마무리 힌트 — 힌트가 붙는 첫 턴만 캐시 미스이고,
+    # 잔량은 계속 낮으므로 이후 턴은 다시 안정적이다.
+    extra = _with_farewell(user_id, extra)
     system = compiler.compile_blocks(companion, memories=ctx["memories"],
                                      extra_context=extra)
     history = _trim_history(_to_llm_messages(db.session_messages(session_id)))
@@ -215,6 +242,10 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
         db.add_usage(user_id, companion.id, "llm",
                      provider=provider.name, model=provider.model,
                      **stats["usage"])
+        if events is not None:
+            notice = billing.quota_notice(user_id, stats["usage"].get("output_tokens", 0))
+            if notice:
+                events["notice"] = notice
     # 프로바이더가 안전 정책으로 거절했으면 '사실'만 기록 (내용 판정은 하지 않는다)
     if stats.get("refusal"):
         safety.record_refusal(user_id, companion.id)

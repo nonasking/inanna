@@ -239,11 +239,14 @@ class ChatRequest(BaseModel):
     message: str
 
 
-def _sse(gen):
+def _sse(gen, events: dict | None = None):
     def event_stream():
         try:
             for delta in gen:
                 yield f"data: {json.dumps({'delta': delta}, ensure_ascii=False)}\n\n"
+            if events and events.get("notice"):
+                # 쿼터 임계(80%) 통과의 조용한 안내 — 응답이 끝난 뒤 한 줄
+                yield f"data: {json.dumps({'notice': events['notice']}, ensure_ascii=False)}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
         except billing.QuotaExceeded as e:
             yield f"data: {json.dumps({'error': str(e), 'kind': 'quota'}, ensure_ascii=False)}\n\n"
@@ -273,7 +276,9 @@ def chat(companion_id: str, req: ChatRequest, request: Request,
     except billing.QuotaExceeded as e:
         raise HTTPException(402, str(e))
     session_id, _ = orchestrator.ensure_session(user, companion)
-    return _sse(orchestrator.chat_stream(user, companion, session_id, req.message))
+    events: dict = {}
+    return _sse(orchestrator.chat_stream(user, companion, session_id, req.message,
+                                         events=events), events)
 
 
 @app.get("/api/chat/{companion_id}/history")

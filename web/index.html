@@ -19,6 +19,7 @@
   <header class="bar">
     <h1>Inanna</h1>
     <span id="provider-badge" class="badge"></span>
+    <button class="ghost" onclick="openUsage()" title="이용 현황">◔</button>
   </header>
   <div id="companion-list" class="list"></div>
   <div class="list-actions">
@@ -201,6 +202,16 @@
   </header>
   <p class="hint" style="padding:0 16px">지난 대화에서 만들어진 기억이에요. 틀린 기억은 고치거나 지울 수 있어요 — 다음 대화부터 바로 반영됩니다.</p>
   <div id="memories-list" class="list"></div>
+</section>
+
+<!-- 이용 현황 — 잔량은 여기서만(pull). 대화 화면엔 카운터를 두지 않는다 -->
+<section id="view-usage" class="view" hidden>
+  <header class="bar">
+    <button class="ghost" onclick="showView('list')">←</button>
+    <h2>이용 현황</h2>
+    <span id="usage-tier" class="badge"></span>
+  </header>
+  <div id="usage-body" class="list"></div>
 </section>
 
 <!-- 첫 만남 온보딩 — 폼 대신 대화로 컴패니언이 형성된다 -->

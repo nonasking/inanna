@@ -317,7 +317,7 @@ function obTune() {
 const DESKTOP = window.matchMedia("(min-width: 1024px)");
 
 function showView(name) {
-  for (const v of ["list", "builder", "chat", "memories", "onboard", "presets", "preset-chat"]) $(`view-${v}`).hidden = v !== name;
+  for (const v of ["list", "builder", "chat", "memories", "onboard", "presets", "preset-chat", "usage"]) $(`view-${v}`).hidden = v !== name;
   if (DESKTOP.matches && name !== "list") $("view-list").hidden = false;
   if (name === "list") loadList();
   markActiveCard();
@@ -335,6 +335,50 @@ function markActiveCard() {
 }
 
 /* ---------- 기억 열람·정정 ---------- */
+/* ---------- 이용 현황 — 잔량 확인은 여기서만(pull), 대화 화면엔 카운터 없음 ---------- */
+async function openUsage() {
+  showView("usage");
+  const el = $("usage-body");
+  el.innerHTML = `<div class="empty">불러오는 중…</div>`;
+  let s;
+  try { s = await (await api("/api/billing")).json(); }
+  catch { el.innerHTML = `<div class="empty">지금은 불러올 수 없어요.</div>`; return; }
+  if (!s.metered) {
+    $("usage-tier").textContent = "셀프호스팅";
+    el.innerHTML = `<div class="empty">직접 운영하는 서버예요 — 이용 제한이 없어요.</div>`;
+    return;
+  }
+  $("usage-tier").textContent = s.tier_name;
+  const dayH = new Date(s.daily_resets_at * 1000).getHours();
+  const dayLabel = dayH === 0 ? "매일 자정에 새로 채워져요"
+    : `매일 ${dayH < 12 ? "오전 " + dayH : "오후 " + (dayH - 12)}시에 새로 채워져요`;
+  const mr = new Date(s.resets_at * 1000);
+  const monthLabel = `${mr.getMonth() + 1}월 ${mr.getDate()}일에 새로 채워져요`;
+  el.innerHTML = "";
+  const gauge = (title, used, limit, reset) => {
+    const pct = Math.min(100, Math.round((used / limit) * 100));
+    const div = document.createElement("div");
+    div.className = "card usage-card";
+    div.innerHTML = `
+      <div class="row"><b></b><span class="hint">${pct}% 사용</span></div>
+      <div class="usage-track"><div class="usage-fill${pct >= 80 ? " high" : ""}" style="width:${pct}%"></div></div>
+      <div class="hint usage-reset"></div>`;
+    div.querySelector("b").textContent = title;
+    div.querySelector(".usage-reset").textContent = reset;
+    el.appendChild(div);
+  };
+  gauge("오늘의 대화", s.used_today.output_tokens, s.limits.daily_output_tokens, dayLabel);
+  gauge("이번 달 대화", s.used.output_tokens, s.limits.output_tokens, monthLabel);
+  gauge("오늘의 음성", s.used_today.tts_chars, s.limits.daily_tts_chars, dayLabel);
+  gauge("이번 달 음성", s.used.tts_chars, s.limits.tts_chars, monthLabel);
+  // 티어 안내는 이 화면에서만 — 소진 순간의 업셀은 하지 않는다
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.style.padding = "4px 16px";
+  hint.textContent = "지금은 베타 기간이라 초대로 운영돼요. 더 넉넉한 플랜은 준비 중이에요.";
+  el.appendChild(hint);
+}
+
 async function openMemories() {
   if (!chatId) return;
   $("memories-title").textContent = `${chatCompanion ? chatCompanion.name : ""}의 기억`;
@@ -726,7 +770,7 @@ $("card-file").addEventListener("change", async (e) => {
 });
 
 /* ---------- SSE helper (POST + fetch streaming) ---------- */
-async function streamPost(url, body, onDelta) {
+async function streamPost(url, body, onDelta, onNotice) {
   const r = await api(url, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -757,6 +801,7 @@ async function streamPost(url, body, onDelta) {
         throw err;
       }
       if (data.delta) onDelta(data.delta);
+      if (data.notice && onNotice) onNotice(data.notice);
       if (data.done) return;
     }
   }
@@ -782,6 +827,9 @@ async function runStream(logEl, url, body) {
       bubble.textContent = acc;
       bubble.className = "msg assistant";
       logEl.scrollTop = logEl.scrollHeight;
+    }, (notice) => {
+      // 쿼터 임계의 조용한 안내 — 응답이 끝난 뒤, 시스템의 목소리로 한 줄 (기획 #1)
+      addMsg(logEl, "system", notice);
     });
   } catch (err) {
     // 쿼터·오류는 컴패니언이 아니라 '시스템의 조용한 안내'로 (기획 #1)

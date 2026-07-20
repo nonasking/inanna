@@ -213,6 +213,13 @@ button.small { padding: 8px 10px; }
 /* 온보딩 관계 선택 */
 .ob-tpl.active { outline: 2px solid var(--accent); background: var(--panel2); }
 
+/* 이용 현황 게이지 */
+.usage-card { display: block; }
+.usage-card .row { display: flex; justify-content: space-between; align-items: baseline; }
+.usage-track { height: 6px; border-radius: 3px; background: var(--panel2); margin: 8px 0 4px; overflow: hidden; }
+.usage-fill { height: 100%; border-radius: 3px; background: var(--accent-dim); }
+.usage-fill.high { background: #cf8a5b; }
+
 /* 시스템의 조용한 안내 (쿼터 등) — 컴패니언 말풍선과 구분 */
 .msg.system {
   align-self: center; background: transparent; color: var(--dim);
