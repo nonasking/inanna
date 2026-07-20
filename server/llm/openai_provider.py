@@ -18,7 +18,6 @@ class OpenAICompatProvider:
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
-        self.last_usage: dict | None = None
 
     def _headers(self) -> dict:
         h = {"Content-Type": "application/json"}
@@ -36,7 +35,7 @@ class OpenAICompatProvider:
         }
 
     def stream_chat(self, system: str | list[str], messages: list[dict],
-                    max_tokens: int = 2048) -> Iterator[str]:
+                    max_tokens: int = 2048, stats: dict | None = None) -> Iterator[str]:
         out_chars = 0
         # 스트리밍 usage는 서버 구현마다 달라서(stream_options 미지원 다수)
         # 문자수 기반 추정치로 기록한다 (한국어 ≈ 1토큰/1.5자)
@@ -62,11 +61,12 @@ class OpenAICompatProvider:
                 if delta:
                     out_chars += len(delta)
                     yield delta
-        self.last_usage = {"input_tokens": int(in_chars / 1.5),
-                           "output_tokens": int(out_chars / 1.5), "estimated": 1}
+        if stats is not None:
+            stats["usage"] = {"input_tokens": int(in_chars / 1.5),
+                              "output_tokens": int(out_chars / 1.5), "estimated": 1}
 
     def complete(self, system: str | list[str], messages: list[dict],
-                 max_tokens: int = 1024) -> str:
+                 max_tokens: int = 1024, stats: dict | None = None) -> str:
         r = httpx.post(
             f"{self.base_url}/chat/completions",
             json=self._payload(system, messages, max_tokens, stream=False),

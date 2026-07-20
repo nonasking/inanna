@@ -12,6 +12,7 @@ Sign in with Apple(P4 등록 후)은 어댑터 자리만: accounts.apple_sub에
 import hashlib
 import re
 import secrets
+import sqlite3
 import time
 
 from .memory import db
@@ -59,18 +60,27 @@ def register(email: str, password: str, invite: str = "") -> str:
         raise ValueError("이메일 형식이 올바르지 않습니다")
     if len(password) < 8:
         raise ValueError("비밀번호는 8자 이상이어야 합니다")
-    with db.conn() as c:
-        if c.execute("SELECT 1 FROM accounts WHERE email = ?", (email,)).fetchone():
-            raise ValueError("이미 가입된 이메일입니다")
-        cur = c.execute(
-            "INSERT INTO accounts (email, password_hash, invite, created_at)"
-            " VALUES (?, ?, ?, ?)",
-            (email, _hash_password(password), code or None, time.time()))
-        account_id = cur.lastrowid
-    if invite_required and not db.claim_invite(code, f"u{account_id}"):
-        with db.conn() as c:   # 코드가 없거나 이미 쓰인 코드 — 방금 만든 계정 되돌리기
-            c.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
-        raise ValueError("사용할 수 없는 초대 코드예요 (이미 사용됐거나 잘못된 코드)")
+    # 계정 생성과 초대코드 소진은 한 트랜잭션 — 둘 사이에서 크래시하면 코드를
+    # 소진하지 않은 고아 계정(초대 우회)이 남고, 별 트랜잭션의 롤백은 그 창을 못 막는다.
+    try:
+        with db.conn() as c:
+            if c.execute("SELECT 1 FROM accounts WHERE email = ?", (email,)).fetchone():
+                raise ValueError("이미 가입된 이메일입니다")
+            cur = c.execute(
+                "INSERT INTO accounts (email, password_hash, invite, created_at)"
+                " VALUES (?, ?, ?, ?)",
+                (email, _hash_password(password), code or None, time.time()))
+            account_id = cur.lastrowid
+            if invite_required:
+                claimed = c.execute(
+                    "UPDATE invites SET used_by = ?, used_at = ?"
+                    " WHERE code = ? AND used_by IS NULL",
+                    (f"u{account_id}", time.time(), code))
+                if claimed.rowcount == 0:   # 없거나 이미 쓰인 코드 — 트랜잭션째 롤백
+                    raise ValueError("사용할 수 없는 초대 코드예요 (이미 사용됐거나 잘못된 코드)")
+    except sqlite3.IntegrityError:
+        # email UNIQUE 경쟁 — SELECT를 둘 다 통과한 동시 가입에서 진 쪽
+        raise ValueError("이미 가입된 이메일입니다")
     return _issue_token(account_id)
 
 

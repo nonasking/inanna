@@ -87,16 +87,16 @@ def proactive_greeting(user_id: str, companion: Companion, session_id: int,
                  "기억에 있는 것만 언급한다.\n[/컨텍스트]"}]
         tiered = billing.effective_model(user_id)
         provider = get_provider(*(tiered or (companion.model.provider, companion.model.name)))
-        provider.last_usage = None
-        text = provider.complete(system, seed, max_tokens=256).strip()
+        stats: dict = {}
+        text = provider.complete(system, seed, max_tokens=256, stats=stats).strip()
         if not text:
             return None
         text = strip_audio_tags(text)
         db.add_message(session_id, "assistant", text)
-        if provider.last_usage:
+        if stats.get("usage"):
             db.add_usage(user_id, companion.id, "llm",
                          provider=provider.name, model=provider.model,
-                         **provider.last_usage)
+                         **stats["usage"])
         return text
     except Exception:
         return None
@@ -186,17 +186,21 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
     # 어떤 티어든 기억·관계 데이터는 동일하다.
     tiered = billing.effective_model(user_id)
     provider = get_provider(*(tiered or (companion.model.provider, companion.model.name)))
-    provider.last_usage = None
+    # 프로바이더 인스턴스는 lru_cache로 여러 요청이 공유하므로, 결과는 요청-로컬
+    # stats에 받는다 (인스턴스 속성에 쓰면 동시 요청이 서로 덮어 거절·사용량이
+    # 엉뚱한 계정에 귀속된다).
+    stats: dict = {}
     parts: list[str] = []
     t0 = time.monotonic()
     ttft = None
-    for delta in provider.stream_chat(system, history, max_tokens=config.CHAT_MAX_TOKENS):
+    for delta in provider.stream_chat(system, history,
+                                      max_tokens=config.CHAT_MAX_TOKENS, stats=stats):
         if ttft is None:
             ttft = time.monotonic() - t0
         parts.append(delta)
         yield delta
-    u = provider.last_usage or {}
-    pe = getattr(provider, "last_prompt_eval", None)
+    u = stats.get("usage") or {}
+    pe = stats.get("prompt_eval")
     print(f"[chat {companion.id}] {provider.name}/{provider.model} "
           f"ttft {ttft or 0:.2f}s total {time.monotonic() - t0:.2f}s "
           f"in={u.get('input_tokens', '?')} out={u.get('output_tokens', '?')}"
@@ -207,12 +211,12 @@ def chat_stream(user_id: str, companion: Companion, session_id: int,
     reply = strip_audio_tags("".join(parts).strip())
     if reply:
         db.add_message(session_id, "assistant", reply)
-    if provider.last_usage:
+    if stats.get("usage"):
         db.add_usage(user_id, companion.id, "llm",
                      provider=provider.name, model=provider.model,
-                     **provider.last_usage)
+                     **stats["usage"])
     # 프로바이더가 안전 정책으로 거절했으면 '사실'만 기록 (내용 판정은 하지 않는다)
-    if getattr(provider, "last_refusal", False):
+    if stats.get("refusal"):
         safety.record_refusal(user_id, companion.id)
 
 
@@ -234,11 +238,12 @@ def preview_stream(user_id: str, companion: Companion,
         msgs.pop(0)
     tiered = billing.effective_model(user_id)
     provider = get_provider(*(tiered or (companion.model.provider, companion.model.name)))
-    provider.last_usage = None
-    yield from provider.stream_chat(system, msgs, max_tokens=config.CHAT_MAX_TOKENS)
-    if provider.last_usage:
+    stats: dict = {}
+    yield from provider.stream_chat(system, msgs,
+                                    max_tokens=config.CHAT_MAX_TOKENS, stats=stats)
+    if stats.get("usage"):
         db.add_usage(user_id, companion.id, "llm",
                      provider=provider.name, model=provider.model,
-                     **provider.last_usage)
-    if getattr(provider, "last_refusal", False):
+                     **stats["usage"])
+    if stats.get("refusal"):
         safety.record_refusal(user_id, companion.id)

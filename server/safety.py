@@ -42,6 +42,9 @@ def record_refusal(user_id: str, companion_id: str | None) -> None:
     with db.conn() as c:
         c.execute("INSERT INTO refusals (user_id, companion_id, ts) VALUES (?, ?, ?)",
                   (user_id, companion_id, time.time()))
+        # 창을 벗어난 오래된 행은 카운트에 안 쓰이므로 정리 (무한 증가 방지)
+        c.execute("DELETE FROM refusals WHERE user_id = ? AND ts < ?",
+                  (user_id, time.time() - REFUSAL_WINDOW))
         n = c.execute(
             "SELECT COUNT(*) AS n FROM refusals WHERE user_id = ? AND ts >= ?",
             (user_id, time.time() - REFUSAL_WINDOW)).fetchone()["n"]

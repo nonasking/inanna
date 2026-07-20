@@ -69,11 +69,16 @@ def _providers(user_id: str):
     return preferred, (fallback if fallback is not preferred else None)
 
 
-def _record(user_id: str, companion: Companion, provider) -> None:
-    if getattr(provider, "last_usage", None):
+def _record(user_id: str, companion: Companion, provider, stats: dict) -> None:
+    from .. import safety
+    if stats.get("usage"):
         db.add_usage(user_id, companion.id, "llm",
                      provider=provider.name, model=provider.model,
-                     **provider.last_usage)
+                     **stats["usage"])
+    # 첫 만남도 실제 모델·실제 비용이 드는 경로 — preview와 대칭으로 거절을 집계한다
+    # (한쪽만 비면 그쪽으로 악용이 몰린다).
+    if stats.get("refusal"):
+        safety.record_refusal(user_id, companion.id)
 
 
 def onboard_stream(user_id: str, companion: Companion,
@@ -87,16 +92,16 @@ def onboard_stream(user_id: str, companion: Companion,
             if m.get("role") in ("user", "assistant") and m.get("content")]
     msgs.insert(0, _SEED)
     preferred, fallback = _providers(user_id)
-    preferred.last_usage = None
+    stats: dict = {}
     try:
-        yield from preferred.stream_chat(system, msgs, max_tokens=1024)
-        _record(user_id, companion, preferred)
+        yield from preferred.stream_chat(system, msgs, max_tokens=1024, stats=stats)
+        _record(user_id, companion, preferred, stats)
     except Exception:
         if fallback is None:
             raise
-        fallback.last_usage = None
-        yield from fallback.stream_chat(system, msgs, max_tokens=1024)
-        _record(user_id, companion, fallback)
+        stats = {}
+        yield from fallback.stream_chat(system, msgs, max_tokens=1024, stats=stats)
+        _record(user_id, companion, fallback, stats)
 
 
 def extract(user_id: str, companion: Companion, messages: list[dict]) -> dict:

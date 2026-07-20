@@ -13,7 +13,6 @@ class OllamaProvider:
     def __init__(self, model: str, base_url: str):
         self.model = model
         self.base_url = base_url.rstrip("/")
-        self.last_usage: dict | None = None
 
     def _payload(self, system: str | list[str], messages: list[dict], stream: bool) -> dict:
         return {
@@ -47,7 +46,7 @@ class OllamaProvider:
             pass
 
     def stream_chat(self, system: str | list[str], messages: list[dict],
-                    max_tokens: int = 2048) -> Iterator[str]:
+                    max_tokens: int = 2048, stats: dict | None = None) -> Iterator[str]:
         with httpx.stream(
             "POST", f"{self.base_url}/api/chat",
             json=self._payload(system, messages, stream=True),
@@ -62,21 +61,28 @@ class OllamaProvider:
                 if delta:
                     yield delta
                 if chunk.get("done"):
-                    # 마지막 청크에 정확한 토큰 카운트가 실려 온다
-                    self.last_usage = {
-                        "input_tokens": chunk.get("prompt_eval_count", 0),
-                        "output_tokens": chunk.get("eval_count", 0),
-                    }
-                    # 프롬프트 처리 시간 — 프리픽스 캐시 히트 여부의 지표
-                    self.last_prompt_eval = chunk.get("prompt_eval_duration", 0) / 1e9
+                    if stats is not None:
+                        # 마지막 청크에 정확한 토큰 카운트가 실려 온다
+                        stats["usage"] = {
+                            "input_tokens": chunk.get("prompt_eval_count", 0),
+                            "output_tokens": chunk.get("eval_count", 0),
+                        }
+                        # 프롬프트 처리 시간 — 프리픽스 캐시 히트 여부의 지표
+                        stats["prompt_eval"] = chunk.get("prompt_eval_duration", 0) / 1e9
                     break
 
     def complete(self, system: str | list[str], messages: list[dict],
-                 max_tokens: int = 1024) -> str:
+                 max_tokens: int = 1024, stats: dict | None = None) -> str:
         r = httpx.post(
             f"{self.base_url}/api/chat",
             json=self._payload(system, messages, stream=False),
             timeout=httpx.Timeout(120, connect=5),
         )
         r.raise_for_status()
-        return r.json().get("message", {}).get("content", "")
+        data = r.json()
+        if stats is not None:
+            stats["usage"] = {
+                "input_tokens": data.get("prompt_eval_count", 0),
+                "output_tokens": data.get("eval_count", 0),
+            }
+        return data.get("message", {}).get("content", "")

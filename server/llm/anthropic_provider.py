@@ -10,9 +10,6 @@ class AnthropicProvider:
         # ANTHROPIC_API_KEY 또는 `ant auth login` 프로필을 자동으로 사용
         self.client = anthropic.Anthropic()
         self.model = model
-        self.last_usage: dict | None = None    # 직전 호출의 토큰 사용량 (미터링)
-        # 프로바이더가 안전 정책으로 거절했는지 — 내용 판정은 하지 않고 사실만 본다
-        self.last_refusal: bool = False
 
     def _system_blocks(self, system: str | list[str]) -> list[dict]:
         # [안정, 휘발] 블록 — 안정 블록(페르소나)만 캐시 브레이크포인트.
@@ -38,31 +35,38 @@ class AnthropicProvider:
                 return messages[:i] + [marked] + messages[i + 1:]
         return messages
 
+    @staticmethod
+    def _usage(u) -> dict:
+        return {
+            "input_tokens": u.input_tokens, "output_tokens": u.output_tokens,
+            "cache_read_tokens": u.cache_read_input_tokens or 0,
+            "cache_write_tokens": u.cache_creation_input_tokens or 0,
+        }
+
     def stream_chat(self, system: str | list[str], messages: list[dict],
-                    max_tokens: int = 2048) -> Iterator[str]:
+                    max_tokens: int = 2048, stats: dict | None = None) -> Iterator[str]:
         with self.client.messages.stream(
             model=self.model,
             max_tokens=max_tokens,
             system=self._system_blocks(system),
             messages=self._with_history_breakpoint(messages),
         ) as stream:
-            self.last_refusal = False
             yield from stream.text_stream
             final = stream.get_final_message()
-            self.last_refusal = final.stop_reason == "refusal"
-            u = final.usage
-            self.last_usage = {
-                "input_tokens": u.input_tokens, "output_tokens": u.output_tokens,
-                "cache_read_tokens": u.cache_read_input_tokens or 0,
-                "cache_write_tokens": u.cache_creation_input_tokens or 0,
-            }
+            if stats is not None:
+                # 프로바이더가 안전 정책으로 거절했는지 — 내용 판정은 하지 않고 사실만 본다
+                stats["refusal"] = final.stop_reason == "refusal"
+                stats["usage"] = self._usage(final.usage)
 
     def complete(self, system: str | list[str], messages: list[dict],
-                 max_tokens: int = 1024) -> str:
+                 max_tokens: int = 1024, stats: dict | None = None) -> str:
         response = self.client.messages.create(
             model=self.model,
             max_tokens=max_tokens,
             system=self._system_blocks(system),
             messages=messages,
         )
+        if stats is not None:
+            stats["refusal"] = response.stop_reason == "refusal"
+            stats["usage"] = self._usage(response.usage)
         return next((b.text for b in response.content if b.type == "text"), "")
