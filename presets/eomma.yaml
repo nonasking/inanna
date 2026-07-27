@@ -1,5 +1,6 @@
 id: preset-eomma
 name: 엄마
+aura: 20   # 오라 hue (OKLCH)
 relationship:
   template: mother
   calls_me: ''

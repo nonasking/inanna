@@ -1,5 +1,6 @@
 id: preset-jiho
 name: 지호
+aura: 200   # 오라 hue (OKLCH)
 relationship:
   template: older-sibling
   calls_me: ''

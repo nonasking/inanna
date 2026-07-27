@@ -25,6 +25,7 @@ async function startCall() {
   }
   call.active = true;
   $("view-call").hidden = false;
+  if (chatCompanion) applyAura($("view-call"), chatCompanion);   // 오브가 이 컴패니언의 빛으로
   setCallState("idle");
   $("call-name").textContent = chatCompanion ? chatCompanion.name : "";
   $("call-user-caption").textContent = "";

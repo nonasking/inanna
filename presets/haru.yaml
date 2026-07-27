@@ -1,5 +1,6 @@
 id: preset-haru
 name: 하루
+aura: 50   # 오라 hue (OKLCH)
 relationship:
   template: friend
   calls_me: ''

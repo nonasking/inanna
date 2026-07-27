@@ -1,5 +1,6 @@
 id: preset-doha
 name: 도하
+aura: 80   # 오라 hue (OKLCH)
 relationship:
   template: lover
   calls_me: ""
