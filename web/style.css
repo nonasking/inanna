@@ -140,7 +140,8 @@ button.small { padding: 8px 10px; }
 @keyframes orb-pulse { 50% { transform: scale(1.15); } }
 @keyframes orb-think { 50% { transform: scale(.92); box-shadow: 0 0 30px 6px var(--glow-color); } }
 @keyframes orb-speak { 50% { transform: scale(1.08); box-shadow: 0 0 calc(var(--glow-size) * 1.4) 20px var(--glow-color); } }
-.call-captions { flex: 1; width: 100%; max-width: 480px; text-align: center; overflow: hidden; }
+/* 긴 답변도 앞부분을 잃지 않게 스크롤 — 새 텍스트는 JS가 아래로 따라간다 */
+.call-captions { flex: 1; width: 100%; max-width: 480px; text-align: center; overflow-y: auto; }
 .cap-user { color: var(--dim); font-size: 14px; min-height: 20px; }
 .cap-char { font-size: 16px; margin-top: 10px; white-space: pre-wrap; }
 .call-end {

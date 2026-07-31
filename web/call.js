@@ -148,13 +148,17 @@ async function onCallMessage(e) {
       $("call-char-caption").textContent = "";
       call.caption = "";
       break;
-    case "text":
+    case "text": {
       // 오디오 태그([laughs] 등)는 음성으로만 연기 — 자막에서 숨긴다.
       // 태그가 델타에 쪼개져 올 수 있어 원문 버퍼에 모은 뒤 걸러 렌더한다.
       call.caption = (call.caption || "") + ev.delta;
       $("call-char-caption").textContent =
-        call.caption.replace(/\[[a-zA-Z][a-zA-Z ]{1,30}\]/g, " ").replace(/ {2,}/g, " ").slice(-120);
+        call.caption.replace(/\[[a-zA-Z][a-zA-Z ]{1,30}\]/g, " ").replace(/ {2,}/g, " ");
+      // 전체를 유지하고 스크롤이 최신을 따라간다 — 긴 답변도 위로 올려 다시 볼 수 있게
+      const cap = document.querySelector(".call-captions");
+      if (cap) cap.scrollTop = cap.scrollHeight;
       break;
+    }
     case "audio": call.pendingMeta = ev; break;
     case "turn_end": call.turnEnded = true; maybePlaybackEnd(); break;
     case "interrupted": stopPlayback(); break;

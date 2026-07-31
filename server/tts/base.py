@@ -50,4 +50,12 @@ def clean_for_tts(text: str, keep_tags: bool = False) -> str:
     text = _LAUGH.sub(" ", text)
     text = _MD.sub(" ", text)
     text = _HAN.sub(" ", text)
+    text = _HOUR_RE.sub(lambda m: f"{_NATIVE_HOURS[int(m.group(1))]} {m.group(2)}", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+# 시각·시간의 수사는 고유어로 읽는다 — TTS가 "2시"를 "이시"로 읽는 것 방지.
+# 1~12시만 변환 (13시 이상의 24시간제는 한자어 읽기가 표준이라 그대로 둔다).
+_NATIVE_HOURS = {1: "한", 2: "두", 3: "세", 4: "네", 5: "다섯", 6: "여섯",
+                 7: "일곱", 8: "여덟", 9: "아홉", 10: "열", 11: "열한", 12: "열두"}
+_HOUR_RE = re.compile(r"(?<![\d.])([1-9]|1[0-2])\s*(시간|시)")
