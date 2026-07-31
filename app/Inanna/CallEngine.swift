@@ -18,8 +18,11 @@ final class CallEngine: NSObject, ObservableObject {
     private var pcmBuffer = Data()
 
     // 재생 큐 — 도착 순서대로 순차 재생 (mp3/wav 모두 AVAudioPlayer가 디코드)
-    private var playQueue: [Data] = []
+    private var playQueue: [(data: Data, text: String)] = []
     private var player: AVAudioPlayer?
+    private var pendingText = ""   // audio 메타의 문장 텍스트 — 다음 바이너리와 짝
+    private var playingText = ""   // 재생 중 조각의 텍스트 — 끝난 뒤 숨 길이 결정
+    private var resting = false    // 조각 사이 숨 진행 중 — 새 조각이 숨을 건너뛰지 않게
     private var turnEnded = false
 
     private static let targetFormat = AVAudioFormat(
@@ -145,7 +148,7 @@ final class CallEngine: NSObject, ObservableObject {
                 .replacing(/\[[a-zA-Z][a-zA-Z ]{1,30}\]/, with: " ")
                 .suffix(120))
         case "audio":
-            break  // 메타만 — 실 데이터는 다음 바이너리 프레임
+            pendingText = obj["text"] as? String ?? ""  // 실 데이터는 다음 바이너리 프레임
         case "turn_end":
             turnEnded = true
             maybePlaybackEnd()
@@ -163,22 +166,32 @@ final class CallEngine: NSObject, ObservableObject {
     // MARK: - 재생
 
     private func enqueueAudio(_ data: Data) {
-        playQueue.append(data)
+        playQueue.append((data, pendingText))
+        pendingText = ""
         playNext()
     }
 
     private func playNext() {
-        guard player == nil, !playQueue.isEmpty else { return }
-        let data = playQueue.removeFirst()
+        guard player == nil, !resting, !playQueue.isEmpty else { return }
+        let item = playQueue.removeFirst()
         do {
-            let p = try AVAudioPlayer(data: data)
+            let p = try AVAudioPlayer(data: item.data)
             p.delegate = self
             player = p
+            playingText = item.text
             p.play()
         } catch {
             player = nil
             playNext()  // 못 여는 청크는 건너뛴다
         }
+    }
+
+    /// 조각 사이의 '의도된 숨' — 0ms로 붙이면 말을 쏟아내는 느낌이 든다 (웹과 동일 규칙).
+    /// 문장이 끝난 조각 뒤엔 300ms, 중간에 잘린 조각 뒤엔 120ms.
+    private func gapAfter(_ text: String) -> UInt64 {
+        let sentenceEnd = text.range(of: #"[.!?…~]["'」』)]*\s*$"#,
+                                     options: .regularExpression) != nil
+        return sentenceEnd ? 300_000_000 : 120_000_000
     }
 
     private func maybePlaybackEnd() {
@@ -199,8 +212,15 @@ extension CallEngine: AVAudioPlayerDelegate {
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully: Bool) {
         Task { @MainActor in
             self.player = nil
-            self.playNext()
-            self.maybePlaybackEnd()
+            if self.playQueue.isEmpty && self.turnEnded {
+                self.maybePlaybackEnd()   // 턴의 끝 — 숨 없이 바로 청취 복귀
+            } else {
+                self.resting = true
+                try? await Task.sleep(nanoseconds: self.gapAfter(self.playingText))
+                self.resting = false
+                self.playNext()
+                self.maybePlaybackEnd()
+            }
         }
     }
 }

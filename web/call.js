@@ -131,7 +131,7 @@ async function onCallMessage(e) {
         return;
       }
     }
-    call.queue.push(buf);
+    call.queue.push({ buf, text: (meta && meta.text) || "" });
     playNext();
     return;
   }
@@ -169,10 +169,12 @@ async function onCallMessage(e) {
 function playNext() {
   /* 샘플 정확 스케줄링 — onended 후 start()로 잇던 방식은 청크 경계마다
      콜백 지연만큼 불규칙한 공백을 만든다. nextTime 시계로 이어 붙이고,
-     새로 시작할 때만 80ms 리드를 줘 재생 시작부 클리핑을 피한다. */
+     새로 시작할 때만 80ms 리드를 줘 재생 시작부 클리핑을 피한다.
+     조각 사이에는 '의도된 숨'을 둔다 — 0ms로 붙이면 합성이 빠른 턴일수록
+     말을 쏟아내는 느낌이 든다 (사람의 문장 간 휴지는 300~600ms). */
   if (!call.ctx) return;
   while (call.queue.length) {
-    const buf = call.queue.shift();
+    const { buf, text } = call.queue.shift();
     const src = call.ctx.createBufferSource();
     src.buffer = buf;
     src.connect(call.ctx.destination);
@@ -180,7 +182,9 @@ function playNext() {
     const t = Math.max(call.ctx.currentTime + 0.08, call.nextTime);
     call.playing.add(src);
     src.start(t);
-    call.nextTime = t + buf.duration;
+    // 문장이 끝난 조각 뒤엔 숨(300ms), 중간에 잘린 조각 뒤엔 살짝(120ms)
+    const gap = /[.!?…~]["'」』)]*\s*$/.test(text) ? 0.30 : 0.12;
+    call.nextTime = t + buf.duration + gap;
   }
 }
 
