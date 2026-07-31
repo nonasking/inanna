@@ -1,5 +1,6 @@
 id: preset-bomi
 name: 봄이
+aura: 135   # 오라 hue (OKLCH)
 relationship:
   template: younger-sibling
   calls_me: 오빠

@@ -1,5 +1,6 @@
 id: preset-byeol
 name: 별이
+aura: 345   # 오라 hue (OKLCH)
 relationship:
   template: child
   calls_me: ''

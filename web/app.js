@@ -108,6 +108,7 @@ async function openPresets() {
         <div class="name">${escapeHtml(p.name)} <span class="rel">· ${escapeHtml(REL_LABEL[p.template] || p.template)}</span></div>
         <div class="rel">${escapeHtml(p.concept || "")}</div>
       </div>`;
+    applyAura(div.querySelector(".avatar"), p);
     div.onclick = () => openPresetChat(p);
     el.appendChild(div);
   }
@@ -479,6 +480,7 @@ async function loadList() {
         <div class="rel">${escapeHtml(tpl ? tpl.name : c.relationship.template)} · ${escapeHtml(c.relationship.calls_me || "")}</div>
       </div>
       <button class="ghost small" data-edit>✎</button>`;
+    applyAura(div.querySelector(".avatar"), c);
     div.onclick = () => openChat(c.id, c.name);
     div.querySelector("[data-edit]").onclick = (e) => { e.stopPropagation(); openBuilder(c); };
     el.appendChild(div);
@@ -807,6 +809,28 @@ async function streamPost(url, body, onDelta, onNotice) {
   }
 }
 
+/* ---------- 오라 — 컴패니언 고유의 빛깔 (얼굴이 아니라 음색) ----------
+   규칙: 명도·채도는 시스템 상수(OKLCH), 컴패니언은 색상환 위치(hue)만 갖는다.
+   시스템 보라(300°±30°)는 앱의 색으로 남긴다 — 오라가 UI 크롬과 헷갈리지 않게.
+   aura 필드가 없으면 id 해시로 유도(결정적) — 같은 컴패니언은 언제나 같은 빛. */
+function auraHue(c) {
+  if (Number.isInteger(c.aura)) return ((c.aura % 360) + 360) % 360;
+  let h = 0x811c9dc5;
+  for (const ch of String(c.id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b) >>> 0; h ^= h >>> 13;
+  let hue = (h >>> 0) % 12 * 30;
+  while (hue === 300 || hue === 330) hue = (hue + 30) % 360;   // 액센트 금지대
+  return hue;
+}
+
+function applyAura(el, c) {
+  const h = auraHue(c);
+  el.style.setProperty("--aura-core", `oklch(78% 0.11 ${h})`);
+  el.style.setProperty("--aura-deep", `oklch(45% 0.13 ${(h + 50) % 360})`);   // 듀오톤 외광
+  el.style.setProperty("--aura-glow", `oklch(70% 0.12 ${h} / 0.35)`);
+  el.style.setProperty("--aura-text", `oklch(82% 0.09 ${h})`);
+}
+
 /* ---------- chat rendering ---------- */
 function addMsg(logEl, role, text) {
   const div = document.createElement("div");
@@ -857,6 +881,7 @@ async function openChat(id, name) {
   chatId = id;
   $("chat-title").textContent = name;
   chatCompanion = await (await api(`/api/companions/${id}`)).json();
+  applyAura($("view-chat"), chatCompanion);   // 이름·오브가 이 컴패니언의 빛으로
   $("chat-edit").onclick = () => openBuilder(chatCompanion);
   $("chat-voice-toggle").onclick = () => {
     const on = localStorage.getItem(voicePrefKey(chatId)) !== "off";

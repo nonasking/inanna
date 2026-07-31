@@ -1,5 +1,6 @@
 id: preset-sein
 name: 세인
+aura: 165   # 오라 hue (OKLCH)
 relationship:
   template: assistant
   calls_me: ''

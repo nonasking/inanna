@@ -37,6 +37,6 @@ def summaries() -> list[dict]:
     return [
         {"id": c.id, "name": c.name, "template": c.relationship.template,
          "concept": (c.persona.description or "").split(".")[0].split("。")[0][:60],
-         "voice_engine": c.voice.engine}
+         "voice_engine": c.voice.engine, "aura": c.aura}
         for c in load_presets().values()
     ]

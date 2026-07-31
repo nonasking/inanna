@@ -1,5 +1,6 @@
 id: preset-appa
 name: 아빠
+aura: 235   # 오라 hue (OKLCH)
 relationship:
   template: father
   calls_me: ''
