@@ -828,8 +828,7 @@ function applyAura(el, c) {
   const h = auraHue(c);
   const l = h % 2 ? 80 : 68;   // 홀수=밝은 오라, 짝수=깊은 오라
   el.style.setProperty("--aura-core", `oklch(${l}% 0.11 ${h})`);
-  el.style.setProperty("--aura-deep", `oklch(${l - 30}% 0.13 ${(h + 40) % 360})`);   // 듀오톤 외광
-  el.style.setProperty("--aura-glow", `oklch(70% 0.12 ${h} / 0.35)`);
+  el.style.setProperty("--aura-deep", `oklch(${l - 30}% 0.13 ${(h + 40) % 360})`);   // 듀오톤 외곽
   el.style.setProperty("--aura-text", `oklch(82% 0.09 ${h})`);
 }
 

@@ -51,14 +51,11 @@ button.small { padding: 8px 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 .card .avatar {
   width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
-  /* 통화 오브와 같은 시각 언어 — 발광 구체 아바타.
-     색은 컴패니언의 오라(--aura-*, JS 주입) — 형태·명도·채도는 시스템이 갖고
-     컴패니언은 hue만 갖는다. 폴백은 시스템 보라. */
-  background: radial-gradient(circle at 38% 32%,
-    var(--aura-core, #ccb0ff), var(--aura-deep, #6b4dad) 75%);
-  box-shadow: 0 0 10px var(--aura-glow, rgba(180, 140, 242, .35));
+  /* 플랫 원 — 목록은 조용한 틴트+이니셜로 UI에 녹는다 (유저 피드백).
+     구체(입체)는 통화 화면의 시각 언어로만 남긴다. 색은 오라(--aura-*). */
+  background: color-mix(in srgb, var(--aura-core, var(--accent)) 16%, transparent);
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px; font-weight: 700; color: #fff;
+  font-size: 19px; font-weight: 700; color: var(--aura-text, var(--accent));
 }
 .card .meta { flex: 1; min-width: 0; }
 .card .meta .name { font-weight: 600; }
@@ -122,24 +119,21 @@ button.small { padding: 8px 10px; }
   display: flex; align-items: center; justify-content: center;
 }
 .orb-core {
-  /* 오라(컴패니언 고유 hue)가 기본색, 유대감(--bond)이 온기를 더한다 —
-     어떤 오라든 관계가 깊어지면 같은 따뜻함 쪽으로 기운다. */
-  --glow-color: color-mix(in srgb, var(--aura-glow, rgba(180, 140, 242, .38)),
-                          rgba(255, 145, 200, .55) calc(var(--bond) * 100%));
-  --glow-size: calc(52px + var(--bond) * 44px);
+  /* 구 형태는 유지, 뒤 발광은 제거 (유저 피드백). 오라(컴패니언 고유 hue)가
+     기본색, 유대감(--bond)이 온기를 더한다 — 어떤 오라든 관계가 깊어지면
+     같은 따뜻함 쪽으로 기운다. */
   width: 90px; height: 90px; border-radius: 50%;
   background: radial-gradient(circle at 38% 34%,
     color-mix(in oklab, var(--aura-core, #cbb0ff), #ffdcec calc(var(--bond) * 55%)),
     color-mix(in oklab, var(--aura-deep, var(--accent-dim)), #b25a8f calc(var(--bond) * 50%)) 70%);
-  box-shadow: 0 0 var(--glow-size) 12px var(--glow-color);
-  transition: transform .3s, box-shadow .3s;
+  transition: transform .3s;
 }
 #call-orb[data-state="listening"] .orb-core { animation: orb-pulse 1.2s ease-in-out infinite; }
 #call-orb[data-state="thinking"]  .orb-core { animation: orb-think 1.6s linear infinite; opacity: .8; }
 #call-orb[data-state="speaking"]  .orb-core { animation: orb-speak .55s ease-in-out infinite; }
 @keyframes orb-pulse { 50% { transform: scale(1.15); } }
-@keyframes orb-think { 50% { transform: scale(.92); box-shadow: 0 0 30px 6px var(--glow-color); } }
-@keyframes orb-speak { 50% { transform: scale(1.08); box-shadow: 0 0 calc(var(--glow-size) * 1.4) 20px var(--glow-color); } }
+@keyframes orb-think { 50% { transform: scale(.92); } }
+@keyframes orb-speak { 50% { transform: scale(1.08); } }
 /* 긴 답변도 앞부분을 잃지 않게 스크롤 — 새 텍스트는 JS가 아래로 따라간다 */
 .call-captions { flex: 1; width: 100%; max-width: 480px; text-align: center; overflow-y: auto; }
 .cap-user { color: var(--dim); font-size: 14px; min-height: 20px; }
