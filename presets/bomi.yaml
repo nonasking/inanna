@@ -1,6 +1,6 @@
 id: preset-bomi
 name: 봄이
-aura: 135   # 오라 hue (OKLCH)
+aura: 293   # 오라 hue (OKLCH, 보라·핑크 대역 250°~20°)
 relationship:
   template: younger-sibling
   calls_me: 오빠

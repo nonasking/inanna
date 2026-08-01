@@ -1,6 +1,6 @@
 id: preset-jiho
 name: 지호
-aura: 200   # 오라 hue (OKLCH)
+aura: 310   # 오라 hue (OKLCH, 보라·핑크 대역 250°~20°)
 relationship:
   template: older-sibling
   calls_me: ''

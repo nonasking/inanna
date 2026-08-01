@@ -1,6 +1,6 @@
 id: preset-sein
 name: 세인
-aura: 165   # 오라 hue (OKLCH)
+aura: 263   # 오라 hue (OKLCH, 보라·핑크 대역 250°~20°)
 relationship:
   template: assistant
   calls_me: ''

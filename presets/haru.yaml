@@ -1,6 +1,6 @@
 id: preset-haru
 name: 하루
-aura: 50   # 오라 hue (OKLCH)
+aura: 327   # 오라 hue (OKLCH, 보라·핑크 대역 250°~20°)
 relationship:
   template: friend
   calls_me: ''

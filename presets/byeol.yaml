@@ -1,6 +1,6 @@
 id: preset-byeol
 name: 별이
-aura: 345   # 오라 hue (OKLCH)
+aura: 359   # 오라 hue (OKLCH, 보라·핑크 대역 250°~20°)
 relationship:
   template: child
   calls_me: ''

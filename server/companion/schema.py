@@ -49,9 +49,11 @@ class Companion(BaseModel):
     persona: Persona = Field(default_factory=Persona)
     voice: Voice = Field(default_factory=Voice)
     model: ModelOverride = Field(default_factory=ModelOverride)
-    # 오라 — 컴패니언 고유의 빛깔 (OKLCH hue 0~359). 얼굴 없는 존재의 시각
-    # 정체성: 명도·채도는 UI 시스템이 갖고, 컴패니언은 색상환 위치만 갖는다.
-    # None이면 클라이언트가 id 해시로 유도. 프리셋은 페르소나에 맞춰 명시.
+    # 오라 — 컴패니언 고유의 빛깔 (OKLCH hue). 얼굴 없는 존재의 시각 정체성.
+    # 보라·핑크 대역(250°→20°) 안에서만 쓴다 — 색상환 전체를 쓰면 다크
+    # 바이올렛 무드가 깨진다. 구별은 대역 안의 온도(인디고~로즈)와 밝기 2단이
+    # 담당하며, hue의 홀짝이 밝기 단을 정한다(짝수=깊음, 홀수=밝음).
+    # None이면 클라이언트가 id 해시로 대역 안에서 유도. 프리셋은 페르소나에 맞춰 명시.
     aura: int | None = None
 
 

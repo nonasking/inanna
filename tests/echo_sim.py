@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from voice_e2e import CHUNK, SILENCE_1S, connect, make_pcm, send_pcm  # noqa: E402
+from voice_e2e import SILENCE_1S, connect, make_pcm, send_pcm  # noqa: E402
 
 
 def attenuate(pcm: bytes, factor: float) -> bytes:

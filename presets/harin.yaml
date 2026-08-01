@@ -1,6 +1,6 @@
 id: preset-harin
 name: 하린
-aura: 265   # 오라 hue (OKLCH)
+aura: 250   # 오라 hue (OKLCH, 보라·핑크 대역 250°~20°)
 relationship:
   template: lover
   calls_me: ""

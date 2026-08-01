@@ -1,6 +1,6 @@
 id: preset-eomma
 name: 엄마
-aura: 20   # 오라 hue (OKLCH)
+aura: 344   # 오라 hue (OKLCH, 보라·핑크 대역 250°~20°)
 relationship:
   template: mother
   calls_me: ''

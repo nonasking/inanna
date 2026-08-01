@@ -10,7 +10,6 @@
 usage 테이블(2026-07-11부터 수집)이 그 계산의 입력이다.
 """
 import os
-import time
 from datetime import datetime, timezone
 
 from .memory import db

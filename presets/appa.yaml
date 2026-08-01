@@ -1,6 +1,6 @@
 id: preset-appa
 name: 아빠
-aura: 235   # 오라 hue (OKLCH)
+aura: 276   # 오라 hue (OKLCH, 보라·핑크 대역 250°~20°)
 relationship:
   template: father
   calls_me: ''
