@@ -160,6 +160,13 @@
       <label>모델 이름 <input id="f-model-name" placeholder="비우면 기본 모델"></label>
     </div>
 
+    <div id="builder-memories" hidden style="margin-top:28px">
+      <h3>기억</h3>
+      <button class="ghost" style="width:100%"
+              onclick="openMemories(editingId, $('f-name').value, 'builder')">지난 대화의 기억 보기·정리</button>
+      <p class="hint" style="margin-top:6px">틀린 기억은 고치거나 지울 수 있어요 — 다음 대화부터 바로 반영됩니다.</p>
+    </div>
+
     <div id="builder-farewell" hidden style="margin-top:32px; border-top:1px solid var(--panel2); padding-top:20px">
       <button class="ghost danger" style="width:100%" onclick="farewellCompanion()">작별하기</button>
       <p class="hint" style="text-align:center; margin-top:8px">함께한 기억이 모두 사라지고, 되돌릴 수 없어요.</p>
@@ -183,7 +190,6 @@
     <h2 id="chat-title"></h2>
     <button class="ghost" id="chat-call" title="음성 통화" onclick="startCall()">📞</button>
     <button class="ghost" id="chat-voice-toggle" title="음성 재생" hidden>🔊</button>
-    <button class="ghost" id="chat-memories" title="기억" onclick="openMemories()">🧠</button>
     <button class="ghost" id="chat-edit" title="편집">✎</button>
   </header>
   <div id="chat-log" class="chat-log"></div>
@@ -196,7 +202,7 @@
 <!-- 기억 열람·정정 — 컴패니언이 나를 어떻게 기억하는지, 내가 소유하고 고친다 -->
 <section id="view-memories" class="view" hidden>
   <header class="bar">
-    <button class="ghost" onclick="showView('chat')">←</button>
+    <button class="ghost" onclick="closeMemories()">←</button>
     <h2 id="memories-title">기억</h2>
     <span></span>
   </header>
@@ -304,7 +310,7 @@
   <button class="call-end" onclick="event.stopPropagation(); endCall()">통화 종료</button>
 </section>
 
-<script src="/static/app.js?v=14"></script>
+<script src="/static/app.js?v=15"></script>
 <script src="/static/call.js?v=8"></script>
 </body>
 </html>

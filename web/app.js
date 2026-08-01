@@ -380,17 +380,24 @@ async function openUsage() {
   el.appendChild(hint);
 }
 
-async function openMemories() {
-  if (!chatId) return;
-  $("memories-title").textContent = `${chatCompanion ? chatCompanion.name : ""}의 기억`;
+/* 기억 관리는 무대 뒤(편집 화면)에서만 연다 — 채팅 헤더에 두면 관계 한가운데에
+   "이건 편집 가능한 데이터"라는 안내판을 세우는 셈이라 몰입을 깬다. */
+let memId = null, memBack = "builder";
+async function openMemories(id, name, back = "builder") {
+  if (!id) return;
+  memId = id;
+  memBack = back;
+  $("memories-title").textContent = `${name || ""}의 기억`;
   showView("memories");
   await loadMemories();
 }
 
+function closeMemories() { showView(memBack); }
+
 async function loadMemories() {
   const el = $("memories-list");
   el.innerHTML = `<div class="empty">불러오는 중…</div>`;
-  const rows = await (await api(`/api/companions/${chatId}/memories`)).json();
+  const rows = await (await api(`/api/companions/${memId}/memories`)).json();
   el.innerHTML = "";
   if (!rows.length) {
     el.innerHTML = `<div class="empty">아직 기억이 없어요.<br>대화가 쌓이면 여기서 볼 수 있어요.</div>`;
@@ -529,6 +536,7 @@ function applyTemplate() {
 function openBuilder(companion = null) {
   editingId = companion ? companion.id : null;
   $("builder-farewell").hidden = !editingId;   // 기존 컴패니언만 작별 가능
+  $("builder-memories").hidden = !editingId;   // 기억도 기존 컴패니언에게만 있다
   $("builder-title").textContent = companion ? `${companion.name} 편집` : "새 컴패니언";
   const sel = $("f-template");
   sel.innerHTML = TEMPLATES.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
