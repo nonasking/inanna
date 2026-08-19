@@ -16,9 +16,13 @@ struct InannaApp: App {
 
 struct RootView: View {
     @EnvironmentObject var app: AppState
+    // 외부 AI 전송 동의 (App Store 5.1.2(i)) — 동의 전에는 어떤 화면도 열지 않는다
+    @AppStorage("aiTransferConsent") private var aiTransferConsent = false
 
     var body: some View {
-        if app.isConfigured {
+        if !aiTransferConsent {
+            ConsentView { aiTransferConsent = true }
+        } else if app.isConfigured {
             CompanionListView()
         } else {
             SetupView()

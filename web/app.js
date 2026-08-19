@@ -347,6 +347,7 @@ async function openUsage() {
   if (!s.metered) {
     $("usage-tier").textContent = "셀프호스팅";
     el.innerHTML = `<div class="empty">직접 운영하는 서버예요 — 이용 제한이 없어요.</div>`;
+    appendAccountSection(el, s);
     return;
   }
   $("usage-tier").textContent = s.tier_name;
@@ -378,6 +379,45 @@ async function openUsage() {
   hint.style.padding = "4px 16px";
   hint.textContent = "지금은 베타 기간이라 초대로 운영돼요. 더 넉넉한 플랜은 준비 중이에요.";
   el.appendChild(hint);
+  appendAccountSection(el, s);
+}
+
+/* 계정 관리 — 로그아웃·계정 삭제(App Store 5.1.1(v))·처리방침·문의 */
+function appendAccountSection(el, s) {
+  const acct = document.createElement("div");
+  acct.className = "card usage-card";
+  acct.innerHTML = `
+    <div class="row"><b>계정</b>
+      <a class="hint" href="/static/privacy.html" target="_blank" rel="noopener">개인정보처리방침</a></div>
+    <div style="display:flex; gap:8px; margin-top:10px">
+      <button class="ghost" style="flex:1">로그아웃</button>
+      ${s.metered ? `<button class="ghost danger" style="flex:1">계정 삭제</button>` : ""}
+    </div>
+    <p class="hint" style="margin-top:8px">문제가 있는 응답은 말풍선을 길게 눌러(우클릭) 신고하거나
+      <a href="mailto:nonasking@gmail.com">메일</a>로 알려주세요.</p>`;
+  const [logoutBtn, deleteBtn] = acct.querySelectorAll("button");
+  logoutBtn.onclick = () => { localStorage.removeItem(TOKEN_KEY); location.reload(); };
+  if (deleteBtn) deleteBtn.onclick = deleteAccountWeb;
+  el.appendChild(acct);
+}
+
+async function deleteAccountWeb() {
+  if (!confirm("계정과 모든 데이터(컴패니언·대화·기억)가 완전히 삭제됩니다. 되돌릴 수 없어요. 계속할까요?")) return;
+  if (!confirm("정말 삭제할까요?")) return;
+  await api("/api/auth/account", { method: "DELETE" });
+  localStorage.removeItem(TOKEN_KEY);
+  alert("계정이 삭제되었습니다. 함께해줘서 고마웠어요.");
+  location.reload();
+}
+
+async function reportMessage(content) {
+  const reason = prompt("이 응답을 신고할까요? 사유를 적어주세요 (선택):");
+  if (reason === null) return;
+  await api("/api/report", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ companion_id: chatId || "", content, reason }),
+  });
+  alert("신고가 접수됐어요. 24시간 안에 확인할게요.");
 }
 
 /* 기억 관리는 무대 뒤(편집 화면)에서만 연다 — 채팅 헤더에 두면 관계 한가운데에
@@ -845,6 +885,10 @@ function addMsg(logEl, role, text) {
   const div = document.createElement("div");
   div.className = `msg ${role}`;
   div.textContent = text;
+  if (role.startsWith("assistant") && logEl.id === "chat-log") {
+    // 부적절 응답 신고 진입점 (App Store 1.2 UGC) — 우클릭/롱프레스
+    div.oncontextmenu = (e) => { e.preventDefault(); reportMessage(div.textContent); };
+  }
   logEl.appendChild(div);
   logEl.scrollTop = logEl.scrollHeight;
   return div;

@@ -69,6 +69,26 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// 계정+전체 데이터 완전 삭제 (App Store 5.1.1(v)) — 성공하면 로그아웃 상태가 된다.
+    func deleteAccount() async -> Bool {
+        guard let api else { return false }
+        do {
+            _ = try await api.send("api/auth/account", method: "DELETE")
+            signOut()
+            return true
+        } catch {
+            lastError = "계정 삭제에 실패했어요. 잠시 후 다시 시도해주세요."
+            return false
+        }
+    }
+
+    /// 부적절한 AI 응답 신고 (App Store 1.2 UGC) — 실패해도 조용히 넘어간다.
+    func report(companionId: String, content: String) async {
+        guard let api else { return }
+        _ = try? await api.send("api/report", json: [
+            "companion_id": companionId, "content": content, "reason": "in-app report"])
+    }
+
     func signOut() {
         authToken = ""
         companions = []

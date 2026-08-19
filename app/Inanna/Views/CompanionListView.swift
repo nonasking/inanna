@@ -4,6 +4,7 @@ struct CompanionListView: View {
     @EnvironmentObject var app: AppState
     @State private var showOnboard = false
     @State private var showPresets = false
+    @State private var showDeleteAccount = false
     @State private var navPath = NavigationPath()
 
     var body: some View {
@@ -29,7 +30,12 @@ struct CompanionListView: View {
                 Button { showPresets = true } label: { Image(systemName: "sparkles") }
                 Button { showOnboard = true } label: { Image(systemName: "plus") }
                 Menu {
+                    if let url = URL(string: app.serverURLString + "/static/privacy.html") {
+                        Link("개인정보처리방침", destination: url)
+                    }
                     Button("로그아웃", role: .destructive) { app.signOut() }
+                    // 앱 내 계정 삭제 — App Store 5.1.1(v) 필수 요건
+                    Button("계정 삭제", role: .destructive) { showDeleteAccount = true }
                 } label: {
                     Image(systemName: "person.circle")
                 }
@@ -44,6 +50,15 @@ struct CompanionListView: View {
             }
             .refreshable { await app.loadCompanions() }
             .task { await app.loadCompanions() }
+            .confirmationDialog(
+                "계정과 모든 데이터(컴패니언·대화·기억)가 완전히 삭제됩니다. 되돌릴 수 없어요.",
+                isPresented: $showDeleteAccount, titleVisibility: .visible
+            ) {
+                Button("계정 삭제", role: .destructive) {
+                    Task { _ = await app.deleteAccount() }
+                }
+                Button("취소", role: .cancel) {}
+            }
         }
     }
 

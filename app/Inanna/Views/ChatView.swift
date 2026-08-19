@@ -11,13 +11,29 @@ struct ChatView: View {
     @State private var showCall = false
     @State private var showMemories = false
     @State private var showEdit = false
+    @State private var showReported = false
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 8) {
-                        ForEach(messages) { Bubble(message: $0) }
+                        ForEach(messages) { m in
+                            if m.role == "assistant" {
+                                // 부적절 응답 신고 진입점 (App Store 1.2 UGC) — 길게 누르기
+                                Bubble(message: m).contextMenu {
+                                    Button("이 응답 신고하기", systemImage: "flag") {
+                                        Task {
+                                            await app.report(companionId: companion.id,
+                                                             content: m.content)
+                                            showReported = true
+                                        }
+                                    }
+                                }
+                            } else {
+                                Bubble(message: m)
+                            }
+                        }
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
@@ -26,6 +42,10 @@ struct ChatView: View {
                     if let last = messages.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
+                }
+                .alert("신고가 접수됐어요. 24시간 안에 확인할게요.",
+                       isPresented: $showReported) {
+                    Button("확인", role: .cancel) {}
                 }
             }
             inputBar

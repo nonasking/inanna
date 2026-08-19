@@ -164,6 +164,28 @@ def admin_list_invites(user: str = Depends(current_user)):
     return db.list_invites()
 
 
+# ---------- 신고 (App Store 1.2 UGC — 부적절 AI 응답 신고·대응) ----------
+
+class ReportRequest(BaseModel):
+    companion_id: str = ""
+    content: str = ""    # 신고된 응답 원문
+    reason: str = ""     # 사용자가 적은 사유 (선택)
+
+
+@app.post("/api/report")
+def report_content(req: ReportRequest, user: str = Depends(current_user)):
+    db.add_report(user, req.companion_id[:64], req.content[:2000], req.reason[:500])
+    print(f"[report] {user} companion={req.companion_id[:32]}", flush=True)
+    return {"ok": True}
+
+
+@app.get("/api/admin/reports")
+def admin_list_reports(user: str = Depends(current_user)):
+    if user != config.DEFAULT_USER:
+        raise HTTPException(403, "권한이 없습니다")
+    return db.list_reports()
+
+
 @app.post("/api/auth/logout")
 def auth_logout(authorization: str | None = Header(None),
                 user: str = Depends(current_user)):

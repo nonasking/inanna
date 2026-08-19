@@ -56,6 +56,14 @@ CREATE TABLE IF NOT EXISTS refusals (
     companion_id TEXT,
     ts REAL NOT NULL                 -- 프로바이더가 거절한 사실만 기록 (내용 저장 안 함)
 );
+CREATE TABLE IF NOT EXISTS reports (  -- 부적절 응답 신고 (App Store 1.2 UGC)
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    companion_id TEXT,
+    content TEXT,                    -- 신고된 응답 원문
+    reason TEXT,                     -- 사용자가 적은 사유 (선택)
+    created_at REAL NOT NULL
+);
 CREATE TABLE IF NOT EXISTS growth (
     user_id TEXT NOT NULL,
     companion_id TEXT NOT NULL,
@@ -275,6 +283,20 @@ def release_invite(user_id: str) -> None:
     with conn() as c:
         c.execute("UPDATE invites SET used_by = NULL, used_at = NULL WHERE used_by = ?",
                   (user_id,))
+
+
+def add_report(user_id: str, companion_id: str, content: str, reason: str) -> None:
+    """부적절 응답 신고 접수 — App Store 1.2(UGC) 요건."""
+    with conn() as c:
+        c.execute("INSERT INTO reports (user_id, companion_id, content, reason, created_at)"
+                  " VALUES (?, ?, ?, ?, ?)",
+                  (user_id, companion_id, content, reason, time.time()))
+
+
+def list_reports() -> list[dict]:
+    with conn() as c:
+        rows = c.execute("SELECT * FROM reports ORDER BY created_at DESC").fetchall()
+    return [dict(r) for r in rows]
 
 
 def list_invites() -> list[dict]:
