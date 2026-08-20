@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 설치: cp scripts/com.inanna.backup.plist ~/Library/LaunchAgents/
+	     && launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.inanna.backup.plist -->
+	<key>Label</key>
+	<string>com.inanna.backup</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/kangminsung/dev/inanna/scripts/backup.sh</string>
+	</array>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>4</integer>
+		<key>Minute</key>
+		<integer>30</integer>
+	</dict>
+	<!-- 로그인 시에도 1회 — 새벽에 맥이 꺼져 있던 날의 공백 보완 (백업이 1MB라 부담 없음) -->
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>/tmp/inanna-backup.log</string>
+	<key>StandardErrorPath</key>
+	<string>/tmp/inanna-backup.log</string>
+</dict>
+</plist>
