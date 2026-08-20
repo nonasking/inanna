@@ -9,6 +9,7 @@ struct Companion: Codable, Identifiable, Hashable {
     var persona: Persona = Persona()
     var voice: Voice = Voice()
     var model: ModelOverride = ModelOverride()
+    var aura: Int?   // 오라 hue (Aura.swift) — 없으면 id 해시로 유도
 
     struct Relationship: Codable, Hashable {
         var template: String

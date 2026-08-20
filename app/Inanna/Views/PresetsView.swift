@@ -8,10 +8,6 @@ struct PresetsView: View {
 
     @State private var presets: [PresetSummary] = []
 
-    private let relLabel = ["lover": "연인", "friend": "친구", "younger-sibling": "동생",
-                            "older-sibling": "누나/형", "mother": "어머니", "father": "아버지",
-                            "child": "자식", "assistant": "비서"]
-
     var body: some View {
         NavigationStack {
             List(presets) { p in
@@ -21,15 +17,10 @@ struct PresetsView: View {
                     })
                 } label: {
                     HStack(spacing: 12) {
-                        ZStack {
-                            Circle().fill(RadialGradient(
-                                colors: [Color(red: 0.80, green: 0.69, blue: 1.0),
-                                         Color(red: 0.42, green: 0.30, blue: 0.68)],
-                                center: .init(x: 0.38, y: 0.32), startRadius: 2, endRadius: 30))
-                            Text(String(p.name.prefix(1))).font(.headline).foregroundStyle(.white)
-                        }.frame(width: 42, height: 42)
+                        AuraAvatar(name: p.name, hue: Aura.hue(id: p.id, aura: p.aura),
+                                   size: 42)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(p.name)  ·  \(relLabel[p.template] ?? p.template)")
+                            Text("\(p.name)  ·  \(REL_LABEL[p.template] ?? p.template)")
                                 .font(.headline)
                             if let c = p.concept, !c.isEmpty {
                                 Text(c).font(.caption).foregroundStyle(.secondary).lineLimit(2)
@@ -57,6 +48,7 @@ struct PresetSummary: Codable, Identifiable {
     var name: String
     var template: String
     var concept: String?
+    var aura: Int?
 }
 
 /// 프리셋 체험 대화 (무저장) + 데려오기

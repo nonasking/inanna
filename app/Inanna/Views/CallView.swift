@@ -34,7 +34,9 @@ struct CallView: View {
                 }
                 .padding(.top, 48)
 
-                Orb(state: call.state, bond: call.bond)
+                Orb(state: call.state,
+                    hue: Aura.hue(id: companion.id, aura: companion.aura),
+                    bond: call.bond)
                     .frame(width: 140, height: 140)
                     .padding(.vertical, 56)
 
@@ -79,6 +81,7 @@ struct CallView: View {
 /// bond(유대감 0~1)가 높을수록 색이 따뜻해지고 빛이 풍성해진다.
 private struct Orb: View {
     let state: String
+    let hue: Int
     var bond: Double = 0
     @State private var phase = false
 
@@ -89,14 +92,13 @@ private struct Orb: View {
     }
 
     var body: some View {
+        // 오라(컴패니언 고유 hue)가 기본색, 유대감(bond)이 온기를 더한다.
+        // 구 형태 유지·발광 제거 (유저 피드백, 웹과 동일)
         Circle()
-            .fill(RadialGradient(colors: [mix((0.80, 0.69, 1.0), (1.0, 0.86, 0.93)),
-                                          mix((0.49, 0.37, 0.75), (0.70, 0.35, 0.56))],
+            .fill(RadialGradient(colors: [mix(Aura.coreRGB(hue), (1.0, 0.86, 0.93)),
+                                          mix(Aura.deepRGB(hue), (0.70, 0.35, 0.56))],
                                  center: .init(x: 0.38, y: 0.34),
                                  startRadius: 4, endRadius: 70))
-            .shadow(color: mix((0.71, 0.55, 0.95), (1.0, 0.57, 0.78))
-                        .opacity(0.4 + bond * 0.15),
-                    radius: (phase ? 44 : 24) + bond * 14)
             .scaleEffect(scale)
             .animation(animation, value: phase)
             .onAppear { phase = true }

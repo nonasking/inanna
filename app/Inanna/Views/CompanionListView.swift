@@ -64,25 +64,20 @@ struct CompanionListView: View {
 
     private func row(_ c: Companion) -> some View {
         HStack(spacing: 12) {
-            ZStack {
-                // 통화 오브와 같은 시각 언어 — 발광 구체 아바타
-                Circle().fill(RadialGradient(
-                    colors: [Color(red: 0.80, green: 0.69, blue: 1.0),
-                             Color(red: 0.42, green: 0.30, blue: 0.68)],
-                    center: .init(x: 0.38, y: 0.32), startRadius: 2, endRadius: 34))
-                    .shadow(color: Color(red: 0.71, green: 0.55, blue: 0.95).opacity(0.35),
-                            radius: 6)
-                Text(String(c.name.prefix(1)))
-                    .font(.headline)
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 44, height: 44)
+            // 플랫 오라 아바타 — 목록은 조용하게, 구체는 통화 화면의 언어 (웹과 동일)
+            AuraAvatar(name: c.name, hue: Aura.hue(id: c.id, aura: c.aura))
             VStack(alignment: .leading) {
                 Text(c.name).font(.headline)
-                Text("\(c.relationship.template) · \(c.relationship.callsMe ?? "")")
+                Text(relCaption(c))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func relCaption(_ c: Companion) -> String {
+        let rel = REL_LABEL[c.relationship.template] ?? c.relationship.template
+        let calls = c.relationship.callsMe
+        return calls.isEmpty ? rel : "\(rel) · \(calls)"
     }
 }

@@ -13,6 +13,7 @@ struct CompanionEditView: View {
     @State private var busy = false
     @State private var error: String?
     @State private var confirmFarewell = false
+    @State private var showMemories = false
 
     private let speechLevels = [("banmal", "반말"), ("jondaemal", "존댓말"), ("mixed", "섞임")]
     private let engines = [("", "없음 (텍스트만)"), ("edge", "프리셋 보이스"),
@@ -112,6 +113,15 @@ struct CompanionEditView: View {
                         .foregroundStyle(error == nil ? Color.secondary : .red)
                 }
 
+                // 기억 관리는 무대 뒤(여기)에서만 — 채팅 화면에 두면 몰입을 깬다 (웹과 동일)
+                Section {
+                    Button("지난 대화의 기억 보기·정리") { showMemories = true }
+                } header: {
+                    Text("기억")
+                } footer: {
+                    Text("틀린 기억은 고치거나 지울 수 있어요 — 다음 대화부터 바로 반영됩니다.")
+                }
+
                 Section {
                     Button("작별하기", role: .destructive) { confirmFarewell = true }
                         .frame(maxWidth: .infinity)
@@ -130,6 +140,9 @@ struct CompanionEditView: View {
                 }
             }
             .task { await loadVoices() }
+            .sheet(isPresented: $showMemories) {
+                MemoriesView(companion: companion)
+            }
             .confirmationDialog("\(companion.name)와 작별할까요?",
                                 isPresented: $confirmFarewell, titleVisibility: .visible) {
                 Button("작별하기", role: .destructive) { farewell() }

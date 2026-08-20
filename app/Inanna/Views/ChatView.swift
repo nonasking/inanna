@@ -9,7 +9,6 @@ struct ChatView: View {
     @State private var input = ""
     @State private var streaming = false
     @State private var showCall = false
-    @State private var showMemories = false
     @State private var showEdit = false
     @State private var showReported = false
 
@@ -56,16 +55,13 @@ struct ChatView: View {
             if companion.voice.engine?.isEmpty == false {
                 Button { showCall = true } label: { Image(systemName: "phone") }
             }
-            Button { showMemories = true } label: { Image(systemName: "brain") }
+            // 기억 관리는 무대 뒤(편집 화면)로 — 채팅 헤더는 관계의 도구만 (웹과 동일)
             Button { showEdit = true } label: { Image(systemName: "slider.horizontal.3") }
         }
         .fullScreenCover(isPresented: $showCall, onDismiss: {
             Task { await loadHistory() }  // 통화 턴도 대화 기록 — 종료 후 동기화
         }) {
             CallView(companion: companion)
-        }
-        .sheet(isPresented: $showMemories) {
-            MemoriesView(companion: companion)
         }
         .sheet(isPresented: $showEdit) {
             CompanionEditView(companion: companion,
