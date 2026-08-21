@@ -77,6 +77,7 @@ def proactive_greeting(user_id: str, companion: Companion, session_id: int,
     실패(쿼터·프로바이더 오류)는 조용히 건너뛴다 — 인사는 보너스지 의무가 아니다.
     """
     try:
+        safety.check_suspended(user_id)   # 정지 계정엔 선제 인사도 생성하지 않는다
         billing.check_chat_quota(user_id)
         system = compiler.compile_blocks(companion)
         memories = db.recent_memories(user_id, companion.id, config.MEMORY_RECENT)

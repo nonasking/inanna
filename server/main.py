@@ -7,7 +7,7 @@ from fastapi import (Depends, FastAPI, Header, HTTPException, Request, UploadFil
                      WebSocket, WebSocketDisconnect)
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import auth, billing, config, safety, tts
 from .chat import onboard, orchestrator
@@ -20,13 +20,16 @@ from .memory import db
 # 익명 요청이 오너('local')로 폴백해 전 API가 조용히 열린다 — 기동을 거부한다.
 # (invites 테이블 기반 초대제도 동일 — 기동 시점에는 config만 확인 가능하므로
 #  여기서는 env 설정을 본다. 운영 중 발급되는 1회용 코드는 아래 API로 관리한다.)
-if config.INVITE_CODES and not config.AUTH_TOKEN:
-    raise RuntimeError(
-        "INANNA_INVITE_CODES가 설정됐는데 INANNA_AUTH_TOKEN이 비어 있습니다. "
-        "외부 노출 구성에서는 오너 토큰이 필수입니다 (.env 확인).")
-
 app = FastAPI(title="Inanna")
 db.init()
+
+# 페일클로즈(보안 M3+M4): 초대제(=외부 노출 의도)인데 오너 토큰이 비어 있으면
+# 익명 요청이 오너('local')로 폴백해 전 API가 조용히 열린다 — 기동을 거부한다.
+# env 시드 코드뿐 아니라 API로만 발급한 DB 초대(db.init 뒤라야 조회 가능)까지 본다.
+if (config.INVITE_CODES or db.list_invites()) and not config.AUTH_TOKEN:
+    raise RuntimeError(
+        "초대 코드가 존재하는데 INANNA_AUTH_TOKEN이 비어 있습니다. "
+        "외부 노출 구성에서는 오너 토큰이 필수입니다 (.env 확인).")
 
 # .env의 INANNA_INVITE_CODES는 '부트스트랩 시드'다 — 1회용 코드로 등록된다.
 # (예전엔 무한 재사용이라 코드 1개 유출 = 계정 무한 생성이었다.)
@@ -243,22 +246,36 @@ def list_templates(user: str = Depends(current_user)):
     return [t.model_dump() for t in templates.load_templates().values()]
 
 
+MAX_CARD_BYTES = 8 * 1024 * 1024   # 캐릭터 카드 PNG/JSON 상한 (voice-ref와 같은 방어)
+
+
 @app.post("/api/import-card")
 async def import_card(file: UploadFile, user: str = Depends(current_user)):
-    data = await file.read()
+    data = await file.read(MAX_CARD_BYTES + 1)   # 상한+1까지만 읽어 메모리 고갈 방지
+    if len(data) > MAX_CARD_BYTES:
+        raise HTTPException(413, "카드 파일이 너무 커요 (최대 8MB)")
     try:
         card = card_import.parse_card(data)
         companion = card_import.to_companion(card)
-    except Exception as e:
-        raise HTTPException(400, f"카드를 읽을 수 없습니다: {e}")
+    except HTTPException:
+        raise
+    except Exception:
+        # 파서 내부 메시지를 그대로 노출하지 않는다 (정보 유출 방지)
+        raise HTTPException(400, "카드를 읽을 수 없어요. 형식을 확인해주세요.")
     # 저장하지 않고 빌더 초기값으로 돌려준다 — 관계 선택은 사용자의 몫
     return companion.model_dump()
 
 
 # ---------- chat ----------
 
+# 입력 길이 상한 — 무제한이면 유저가 거대 프롬프트를 반복 전송해 오너의 입력
+# 토큰 청구를 상한 없이 부풀릴 수 있다(출력만 CHAT_MAX_TOKENS로 막혀 있으므로).
+MAX_MSG = 8000        # 한 발화 (한국어 기준 수천 토큰)
+MAX_TURNS = 60        # 미리보기/온보딩이 넘겨줄 수 있는 이력 길이
+
+
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(max_length=MAX_MSG)
 
 
 def _sse(gen, events: dict | None = None):
@@ -334,7 +351,7 @@ def history(companion_id: str, limit: int = 50, user: str = Depends(current_user
 # ---------- 프리셋 (체험용 미리 설정 컴패니언) ----------
 
 class PreviewMessages(BaseModel):
-    messages: list[dict] = []
+    messages: list[dict] = Field(default=[], max_length=MAX_TURNS)
 
 
 @app.get("/api/presets")
@@ -388,8 +405,8 @@ def adopt_preset(preset_id: str, user: str = Depends(current_user)):
 
 class OnboardRequest(BaseModel):
     companion: Companion          # 원형 — 관계·이름만 채워진 상태
-    messages: list[dict] = []
-    first_memory: str = ""
+    messages: list[dict] = Field(default=[], max_length=MAX_TURNS)
+    first_memory: str = Field(default="", max_length=MAX_MSG)
 
 
 @app.post("/api/onboard/chat")
@@ -420,7 +437,7 @@ def onboard_complete(req: OnboardRequest, user: str = Depends(current_user)):
 
 class PreviewRequest(BaseModel):
     companion: Companion
-    messages: list[dict]
+    messages: list[dict] = Field(max_length=MAX_TURNS)
 
 
 @app.post("/api/preview")
@@ -473,7 +490,7 @@ async def _synthesize(voice: Voice, text: str, user: str = "",
 
 
 class TTSRequest(BaseModel):
-    text: str
+    text: str = Field(max_length=MAX_MSG)
 
 
 @app.post("/api/tts/{companion_id}")
@@ -524,18 +541,20 @@ def billing_status(user: str = Depends(current_user)):
 
 class TierChange(BaseModel):
     tier: str
+    target_user: str = Field(max_length=64)   # 오너가 티어를 바꿔줄 대상 계정 (u<id>)
 
 
 @app.put("/api/billing/tier")
 def billing_set_tier(req: TierChange, user: str = Depends(current_user)):
-    """IAP 연동 전 개발용 — 제품 모드에서는 영수증 검증이 이 자리를 대체한다."""
-    if not billing.is_metered(user):
-        raise HTTPException(400, "셀프호스팅 오너는 과금 대상이 아닙니다")
+    """티어 변경은 운영자만 — 유저 자가 상향은 곧 운영자 API 비용 무단 소진이다.
+    제품 모드에서 유저 티어는 IAP 영수증 검증으로만 올라간다 (그때 이 자리를 대체)."""
+    if user != config.DEFAULT_USER:
+        raise HTTPException(403, "권한이 없습니다")
     try:
-        billing.set_tier(user, req.tier)
+        billing.set_tier(req.target_user, req.tier)
     except ValueError as e:
         raise HTTPException(400, str(e))
-    return billing.status(user)
+    return {"ok": True, "user": req.target_user, "tier": req.tier}
 
 
 @app.post("/api/admin/unsuspend/{account_id}")
