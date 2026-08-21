@@ -22,12 +22,14 @@ targets:
         NSAppTransportSecurity:
           # 개발 모드: Tailscale HTTPS 또는 로컬 HTTP 서버 접속 허용
           NSAllowsLocalNetworking: true
-        UIBackgroundModes: [audio]   # 통화 중 화면 잠금에도 음성 세션 유지
         CFBundleDisplayName: Inanna
         # TLS만 사용 — 수출용 비면제 암호화 없음. 업로드 시 수출규정 질문 자동 통과.
         ITSAppUsesNonExemptEncryption: false
+        # 세로 전용 (관계 대화 앱) — 아이폰 한정이라 아이패드 방향 요건 비적용
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: dev.nonasking.inanna
       INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+      TARGETED_DEVICE_FAMILY: "1"   # 아이폰 전용
       CODE_SIGN_STYLE: Automatic
       DEVELOPMENT_TEAM: J6H63W2C5Z   # Apple Developer Program 팀 (2026-08 유료 전환, 1년 서명)
