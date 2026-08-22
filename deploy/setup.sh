@@ -73,7 +73,9 @@ systemctl enable --now fail2ban
 
 echo "== 11. 백업 cron (매일 04:30) =="
 cp "$APP/deploy/backup.sh" "$HOME_DIR/backup.sh"; chmod +x "$HOME_DIR/backup.sh"; chown $USER:$USER "$HOME_DIR/backup.sh"
-( crontab -u $USER -l 2>/dev/null | grep -v backup.sh; echo "30 4 * * * /home/$USER/backup.sh >> /home/$USER/backup.log 2>&1" ) | crontab -u $USER -
+CRON_LINE="30 4 * * * /home/$USER/backup.sh >> /home/$USER/backup.log 2>&1"
+# 새 유저는 crontab이 없어 `crontab -l`이 1을 반환한다 — set -e에 걸리지 않게 || true
+( crontab -u $USER -l 2>/dev/null | grep -v backup.sh || true; echo "$CRON_LINE" ) | crontab -u $USER -
 
 echo ""
 echo "== 완료 =="
