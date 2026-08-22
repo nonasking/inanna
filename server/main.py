@@ -229,7 +229,16 @@ def get_companion(companion_id: str, user: str = Depends(current_user)):
 
 
 @app.post("/api/companions")
-def save_companion(companion: Companion, user: str = Depends(current_user)):
+def save_companion(companion: Companion, create: bool = False,
+                   user: str = Depends(current_user)):
+    """저장(생성·수정 겸용). create=1이면 id 중복 시 새 id를 만들어 돌려준다 —
+    같은 영문 이름을 두 번 만들 때 앞 컴패니언을 덮어쓰고 기억이 섞이는 것 방지."""
+    if create and store.exists(user, companion.id):
+        base = companion.id
+        n = 2
+        while store.exists(user, f"{base}-{n}"):
+            n += 1
+        companion.id = f"{base}-{n}"
     store.save(user, companion)
     return {"ok": True, "id": companion.id}
 

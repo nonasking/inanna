@@ -78,6 +78,9 @@ VOICES_DIR = Path(os.environ.get("INANNA_VOICES_DIR", ROOT / "voices"))
 SOVITS_URL = os.environ.get("INANNA_SOVITS_URL", "")
 # whisper.cpp 상주 서버 (실시간 음성 대화 STT)
 WHISPER_URL = os.environ.get("INANNA_WHISPER_URL", "http://127.0.0.1:9881")
+# STT 백엔드 — whisper(로컬 상주, 셀프호스팅용) | elevenlabs(Scribe API,
+# 로컬 추론이 불가능한 작은 클라우드 서버용. ELEVENLABS_API_KEY 재사용)
+STT_PROVIDER = os.environ.get("INANNA_STT", "whisper")
 # ElevenLabs (감정 표현 특화 TTS — 선택)
 ELEVENLABS_API_KEY = os.environ.get("INANNA_ELEVENLABS_API_KEY",
                                     os.environ.get("ELEVENLABS_API_KEY", ""))

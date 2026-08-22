@@ -25,11 +25,30 @@ def wav_bytes(pcm: bytes, rate: int = 16000) -> bytes:
 
 
 async def transcribe(pcm: bytes) -> str:
+    """발화 PCM → 텍스트. 백엔드는 INANNA_STT로 선택.
+
+    - whisper (기본): 로컬 whisper.cpp 상주 서버 — 셀프호스팅(맥·GPU 머신)용
+    - elevenlabs: Scribe API — 작은 클라우드 서버(로컬 추론 불가)용
+    """
+    if config.STT_PROVIDER == "elevenlabs":
+        return await _transcribe_elevenlabs(pcm)
     async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=3)) as client:
         r = await client.post(
             f"{config.WHISPER_URL.rstrip('/')}/inference",
             files={"file": ("utterance.wav", wav_bytes(pcm), "audio/wav")},
             data={"response_format": "json"},
+        )
+        r.raise_for_status()
+        return (r.json().get("text") or "").strip()
+
+
+async def _transcribe_elevenlabs(pcm: bytes) -> str:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=5)) as client:
+        r = await client.post(
+            "https://api.elevenlabs.io/v1/speech-to-text",
+            headers={"xi-api-key": config.ELEVENLABS_API_KEY},
+            files={"file": ("utterance.wav", wav_bytes(pcm), "audio/wav")},
+            data={"model_id": "scribe_v1", "language_code": "ko"},
         )
         r.raise_for_status()
         return (r.json().get("text") or "").strip()

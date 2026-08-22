@@ -790,7 +790,8 @@ async function saveCompanion() {
   const c = collectCompanion();
   if (!c) return;
   if (!validateVoice(c.voice)) return;
-  const r = await api("/api/companions", {
+  // 새로 만들 때는 create=1 — 같은 이름 id가 이미 있으면 서버가 고유 id를 만들어준다
+  const r = await api(`/api/companions${editingId ? "" : "?create=1"}`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(c),
   });
