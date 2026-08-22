@@ -1,0 +1,22 @@
+# Caddy 리버스 프록시 — 도메인별 TLS 자동 발급·갱신 + 앱으로 라우팅.
+# 설치: sudo cp deploy/Caddyfile /etc/caddy/Caddyfile  (도메인 치환 후)
+#       sudo systemctl reload caddy
+#
+# 멀티 프로젝트: 프로젝트가 늘면 이 파일에 블록을 하나씩 추가한다.
+#   app2.example.com { reverse_proxy 127.0.0.1:8788 }
+# 각 프로젝트는 자기 포트의 systemd 서비스로 돌고, Caddy가 도메인으로 나눠준다.
+
+# ── Inanna ──  (INANNA_DOMAIN 값으로 치환할 것, 예: inanna.example.com)
+INANNA_DOMAIN {
+	# 통화 WebSocket·SSE 스트리밍 모두 reverse_proxy가 그대로 흘려보낸다 (별도 설정 불필요)
+	reverse_proxy 127.0.0.1:8787
+
+	encode zstd gzip
+	# 접속 로그 (문제 추적용, 자동 로테이션)
+	log {
+		output file /var/log/caddy/inanna.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}
