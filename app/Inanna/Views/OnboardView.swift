@@ -307,9 +307,12 @@ struct OnboardView: View {
             do {
                 var payload = OnboardPayload(companion: proto, messages: turns)
                 payload.firstMemory = extracted?.firstMemory ?? ""
-                try await api.post("api/onboard/complete", body: payload)
+                let data = try await api.post("api/onboard/complete", body: payload)
                 await app.loadCompanions()
-                onCreated(proto)
+                // 서버가 id를 교정했을 수 있다(중복·규칙 위반) — 응답의 id로 열어야
+                // 존재하지 않는 컴패니언 화면(404)으로 들어가지 않는다.
+                let saved = (try? JSONDecoder().decode(CompletedID.self, from: data))?.id
+                onCreated(app.companions.first(where: { $0.id == (saved ?? proto.id) }) ?? proto)
                 dismiss()
             } catch {
                 self.error = error.localizedDescription
@@ -336,3 +339,6 @@ private struct OnboardBubble: View {
         .id(message.id)
     }
 }
+
+/// onboard/complete 응답 — 서버가 id를 교정했을 수 있어 그 값을 읽는다.
+private struct CompletedID: Codable { var id: String }

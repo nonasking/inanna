@@ -145,20 +145,29 @@ def extract(user_id: str, companion: Companion, messages: list[dict]) -> dict:
 _ID_OK = re.compile(r"[a-z0-9_-]{1,64}")
 
 
-def _safe_id(companion: Companion) -> str:
-    """클라이언트가 준 id가 서버 규칙([a-z0-9_-])에 안 맞으면(한글 이름 등)
-    안전한 id를 생성한다. 이름은 companion.name에 그대로 남는다."""
-    if _ID_OK.fullmatch(companion.id):
-        return companion.id
+def _safe_id(user_id: str, companion: Companion) -> str:
+    """클라이언트가 준 id가 서버 규칙([a-z0-9_-])에 안 맞거나(한글 이름 등)
+    이미 쓰이고 있으면 새 id를 만든다. 이름은 companion.name에 그대로 남는다.
+
+    중복 검사가 없으면 같은 영문 이름을 두 번 만들 때 id가 겹쳐(예: 'anna')
+    앞 컴패니언 파일을 덮어쓰고 그의 기억이 뒤 컴패니언에 붙는다.
+    """
     import secrets
-    return f"c-{secrets.token_hex(4)}"
+
+    from ..companion import store
+    if _ID_OK.fullmatch(companion.id) and not store.exists(user_id, companion.id):
+        return companion.id
+    while True:
+        candidate = f"c-{secrets.token_hex(4)}"
+        if not store.exists(user_id, candidate):
+            return candidate
 
 
 def complete(user_id: str, companion: Companion, messages: list[dict],
              first_memory: str) -> None:
     """저장 + 온보딩 대화를 첫 세션·첫 기억으로 남긴다."""
     from ..companion import store
-    companion.id = _safe_id(companion)   # 한글 이름 등으로 온 잘못된 id 방어
+    companion.id = _safe_id(user_id, companion)   # 잘못된 id·중복 id 방어
     store.save(user_id, companion)
     sid = db.create_session(user_id, companion.id)
     for m in messages:
