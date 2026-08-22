@@ -16,6 +16,13 @@ final class AppState: ObservableObject {
     }
 
     init() {
+        // UI 테스트: 매 실행 클린 상태로 시작 (토큰·동의·서버주소 초기화)
+        if ProcessInfo.processInfo.arguments.contains("-uitest-reset") {
+            authToken = ""
+            serverURLString = ""
+            UserDefaults.standard.removeObject(forKey: "aiTransferConsent")
+            return
+        }
         // 구버전(UserDefaults 평문)에서 1회 이관 후 흔적 제거
         if authToken.isEmpty,
            let legacy = UserDefaults.standard.string(forKey: "authToken"),

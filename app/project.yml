@@ -33,3 +33,30 @@ targets:
       TARGETED_DEVICE_FAMILY: "1"   # 아이폰 전용
       CODE_SIGN_STYLE: Automatic
       DEVELOPMENT_TEAM: J6H63W2C5Z   # Apple Developer Program 팀 (2026-08 유료 전환, 1년 서명)
+
+  # UI 플로우 회귀 테스트 — 실제 앱을 시뮬레이터에서 구동해 사용자 여정을 검증
+  # 실행: xcodebuild test -project Inanna.xcodeproj -scheme Inanna -destination 'id=<sim>'
+  InannaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [InannaUITests]
+    dependencies:
+      - target: Inanna
+    settings:
+      GENERATE_INFOPLIST_FILE: true
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: J6H63W2C5Z
+
+schemes:
+  Inanna:
+    build:
+      targets:
+        Inanna: all
+        InannaUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [InannaUITests]
+    archive:
+      config: Release

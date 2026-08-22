@@ -28,7 +28,9 @@ struct CompanionListView: View {
             .navigationDestination(for: Companion.self) { ChatView(companion: $0) }
             .toolbar {
                 Button { showPresets = true } label: { Image(systemName: "sparkles") }
+                    .accessibilityIdentifier("presetsButton")
                 Button { showOnboard = true } label: { Image(systemName: "plus") }
+                    .accessibilityIdentifier("onboardButton")
                 Menu {
                     if let url = URL(string: app.serverURLString + "/static/privacy.html") {
                         Link("개인정보처리방침", destination: url)
