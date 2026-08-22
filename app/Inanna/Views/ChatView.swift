@@ -11,6 +11,7 @@ struct ChatView: View {
     @State private var showCall = false
     @State private var showEdit = false
     @State private var showReported = false
+    @State private var reportOK = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,8 +24,8 @@ struct ChatView: View {
                                 Bubble(message: m).contextMenu {
                                     Button("이 응답 신고하기", systemImage: "flag") {
                                         Task {
-                                            await app.report(companionId: companion.id,
-                                                             content: m.content)
+                                            reportOK = await app.report(companionId: companion.id,
+                                                                        content: m.content)
                                             showReported = true
                                         }
                                     }
@@ -42,7 +43,8 @@ struct ChatView: View {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
-                .alert("신고가 접수됐어요. 24시간 안에 확인할게요.",
+                .alert(reportOK ? "신고가 접수됐어요. 24시간 안에 확인할게요."
+                                : "신고를 보내지 못했어요. 잠시 후 다시 시도하거나 nonasking@gmail.com으로 알려주세요.",
                        isPresented: $showReported) {
                     Button("확인", role: .cancel) {}
                 }

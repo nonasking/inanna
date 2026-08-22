@@ -118,7 +118,11 @@ final class CallEngine: NSObject, ObservableObject {
                 guard let self else { return }
                 switch result {
                 case .failure:
-                    if self.state != "ended" { self.error = "연결이 끊어졌어요" }
+                    // 끊겼는데 계속 듣는 척하지 않는다 — 마이크·재생을 정리하고 통화를 끝낸다
+                    if self.state != "ended" {
+                        self.error = "연결이 끊어졌어요"
+                        self.stop()
+                    }
                 case .success(let message):
                     switch message {
                     case .string(let text): self.handleEvent(text)

@@ -7,6 +7,17 @@ struct PresetsView: View {
     var onAdopted: (Companion) -> Void = { _ in }
 
     @State private var presets: [PresetSummary] = []
+    @State private var listError: String?
+
+    private func loadPresets() async {
+        guard let api = app.api else { return }
+        do {
+            presets = try await api.get("api/presets", as: [PresetSummary].self)
+            listError = presets.isEmpty ? "추천 컴패니언이 없어요." : nil
+        } catch {
+            listError = error.localizedDescription
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -35,10 +46,16 @@ struct PresetsView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
             }
-            .task {
-                guard let api = app.api else { return }
-                presets = (try? await api.get("api/presets", as: [PresetSummary].self)) ?? []
+            .overlay {
+                // 빈 화면에 이유 없이 갇히지 않게 (로드 실패·빈 목록 모두 안내)
+                if presets.isEmpty {
+                    ContentUnavailableView(
+                        listError == nil ? "불러오는 중…" : "불러오지 못했어요",
+                        systemImage: listError == nil ? "sparkles" : "exclamationmark.triangle",
+                        description: Text(listError ?? ""))
+                }
             }
+            .task { await loadPresets() }
         }
     }
 }
@@ -61,6 +78,8 @@ private struct PresetChatView: View {
     @State private var input = ""
     @State private var streaming = false
     @State private var started = false
+    @State private var adoptError: String?
+    @State private var adopting = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -90,8 +109,14 @@ private struct PresetChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("데려오기") { adopt() }.disabled(streaming)
+                Button(adopting ? "데려오는 중…" : "데려오기") { adopt() }
+                    .disabled(streaming || adopting)
             }
+        }
+        .alert("데려오지 못했어요", isPresented: .constant(adoptError != nil)) {
+            Button("확인") { adoptError = nil }
+        } message: {
+            Text(adoptError ?? "")
         }
         .task {
             guard !started else { return }
@@ -129,18 +154,28 @@ private struct PresetChatView: View {
 
     private func adopt() {
         guard let api = app.api else { return }
+        adopting = true
         Task {
+            defer { adopting = false }
             do {
                 let data = try await api.send("api/presets/\(preset.id)/adopt", method: "POST")
-                let r = try JSONDecoder().decode([String: String].self, from: data)
+                // 응답은 {ok, id, name} — id·name만 읽는다 (ok는 Bool이라 [String:String] 디코딩 불가)
+                let r = try JSONDecoder().decode(AdoptResult.self, from: data)
                 await app.loadCompanions()
-                if let id = r["id"], let c = app.companions.first(where: { $0.id == id }) {
+                if let c = app.companions.first(where: { $0.id == r.id }) {
                     onAdopted(c)
+                } else {
+                    // 데려오기는 성공했는데 목록 갱신이 늦은 경우 — 버튼이 먹통이 되지 않게
+                    onAdopted(Companion(id: r.id, name: r.name,
+                                        relationship: .init(template: preset.template)))
                 }
-            } catch { /* 표시는 생략 — 재시도 가능 */ }
+            } catch {
+                adoptError = error.localizedDescription   // 조용히 멈추지 않게 표시
+            }
         }
     }
 
+    struct AdoptResult: Codable { var id: String; var name: String }
     struct PreviewBody: Codable { var messages: [OnboardPayload.Turn] }
 }
 

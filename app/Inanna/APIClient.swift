@@ -32,11 +32,31 @@ struct APIClient {
         return req
     }
 
+    /// 서버 에러 본문에서 사람이 읽을 문구를 뽑는다.
+    /// FastAPI는 detail을 문자열(HTTPException)로도, 배열(검증 실패)로도 준다 —
+    /// 문자열만 기대하면 검증 실패 때 이유가 통째로 사라진다.
+    private func errorMessage(_ data: Data, status: Int) -> String {
+        if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let s = obj["detail"] as? String, !s.isEmpty { return s }
+            if let arr = obj["detail"] as? [[String: Any]],
+               let first = arr.first, let msg = first["msg"] as? String { return msg }
+        }
+        switch status {
+        case 401: return "로그인이 필요해요"
+        case 402: return "사용량을 다 썼어요"
+        case 403: return "권한이 없어요"
+        case 404: return "찾을 수 없어요"
+        case 413, 422: return "입력이 너무 길거나 형식이 올바르지 않아요"
+        case 429: return "잠시 후 다시 시도해주세요"
+        default: return "요청 실패"
+        }
+    }
+
     private func check(_ resp: URLResponse, _ data: Data) throws {
         guard let http = resp as? HTTPURLResponse else { throw APIError.network }
         guard (200..<300).contains(http.statusCode) else {
-            let detail = (try? JSONDecoder().decode([String: String].self, from: data))?["detail"]
-            throw APIError.server(status: http.statusCode, message: detail ?? "요청 실패")
+            throw APIError.server(status: http.statusCode,
+                                  message: errorMessage(data, status: http.statusCode))
         }
     }
 
@@ -84,7 +104,15 @@ struct APIClient {
                     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     req.httpBody = bodyData
                     let (bytes, resp) = try await URLSession.shared.bytes(for: req)
-                    try check(resp, Data())
+                    // 실패 응답이면 본문을 마저 읽어 서버 문구를 살린다 — 빈 Data로 검사하면
+                    // 쿼터·정지·레이트리밋 안내가 전부 "요청 실패"로 뭉개진다.
+                    if let http = resp as? HTTPURLResponse,
+                       !(200..<300).contains(http.statusCode) {
+                        var body = Data()
+                        for try await b in bytes { body.append(b) }
+                        throw APIError.server(status: http.statusCode,
+                                              message: errorMessage(body, status: http.statusCode))
+                    }
                     for try await line in bytes.lines {
                         guard line.hasPrefix("data: ") else { continue }
                         let payload = Data(line.dropFirst(6).utf8)

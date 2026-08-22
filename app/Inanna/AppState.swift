@@ -86,11 +86,17 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// 부적절한 AI 응답 신고 (App Store 1.2 UGC) — 실패해도 조용히 넘어간다.
-    func report(companionId: String, content: String) async {
-        guard let api else { return }
-        _ = try? await api.send("api/report", json: [
-            "companion_id": companionId, "content": content, "reason": "in-app report"])
+    /// 부적절한 AI 응답 신고 (App Store 1.2 UGC).
+    /// 성공 여부를 돌려준다 — 실패했는데 "접수됐어요"라고 알리면 거짓 고지다.
+    func report(companionId: String, content: String) async -> Bool {
+        guard let api else { return false }
+        do {
+            _ = try await api.send("api/report", json: [
+                "companion_id": companionId, "content": content, "reason": "in-app report"])
+            return true
+        } catch {
+            return false
+        }
     }
 
     func signOut() {

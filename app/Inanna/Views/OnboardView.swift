@@ -12,6 +12,7 @@ struct OnboardView: View {
     @State private var step: Step = .relationship
 
     @State private var templates: [RelTemplate] = []
+    @State private var loadError: String?
     @State private var selected: RelTemplate?
     @State private var name = ""
     @State private var callsMe = ""
@@ -47,9 +48,12 @@ struct OnboardView: View {
                     Button("닫기") { dismiss() }
                 }
             }
-            .task {
-                guard let api = app.api else { return }
-                templates = (try? await api.get("api/templates", as: [RelTemplate].self)) ?? []
+            .task { await loadTemplates() }
+            .alert("관계 목록을 불러오지 못했어요", isPresented: .constant(loadError != nil)) {
+                Button("다시 시도") { loadError = nil; Task { await loadTemplates() } }
+                Button("닫기", role: .cancel) { loadError = nil; dismiss() }
+            } message: {
+                Text(loadError ?? "")
             }
         }
     }
@@ -101,6 +105,17 @@ struct OnboardView: View {
         proto = c
         step = .meeting
         Task { await companionTurn() }   // 컴패니언이 먼저 인사
+    }
+
+    /// 관계 템플릿 로드 — 실패를 삼키면 선택지 없는 빈 화면에 갇혀 이유를 알 수 없다.
+    private func loadTemplates() async {
+        guard let api = app.api else { return }
+        do {
+            templates = try await api.get("api/templates", as: [RelTemplate].self)
+            if templates.isEmpty { loadError = "관계 목록이 비어 있어요. 잠시 후 다시 시도해주세요." }
+        } catch {
+            loadError = error.localizedDescription
+        }
     }
 
     private func slug(_ s: String) -> String {
