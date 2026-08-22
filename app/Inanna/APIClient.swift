@@ -126,6 +126,9 @@ enum APIError: LocalizedError {
         switch self {
         case .network: return "서버에 연결할 수 없어요"
         case .server(let status, let message):
+            // 서버가 사람이 읽을 문구를 주면 그것을 쓴다 — 로그인 실패(비밀번호 오류)에
+            // "설정에서 다시 로그인" 같은 엉뚱한 안내가 뜨지 않게.
+            if !message.isEmpty && message != "요청 실패" { return message }
             return status == 401 ? "인증이 필요해요 — 설정에서 다시 로그인해주세요" : message
         }
     }
