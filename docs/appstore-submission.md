@@ -25,7 +25,7 @@ App Store Connect에 입력할 값 모음. 심사 리스크 대응까지 포함.
 
 ## 개인정보
 
-- 개인정보처리방침 URL: https://macbookpro.tail9f8fdd.ts.net/static/privacy.html
+- 개인정보처리방침 URL: https://inanna.day/static/privacy.html
   (※ 정식 출시 시 안정적 도메인 권장 — 아래 '남은 리스크' 참고)
 - App Privacy 라벨(수집 데이터):
   - 이메일 주소 — 앱 기능, 사용자와 연결됨, 추적 안 함

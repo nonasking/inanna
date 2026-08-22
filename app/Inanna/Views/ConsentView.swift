@@ -5,7 +5,7 @@ import SwiftUI
 struct ConsentView: View {
     var onAgree: () -> Void
 
-    private let privacyURL = URL(string: "https://macbookpro.tail9f8fdd.ts.net/static/privacy.html")
+    private let privacyURL = URL(string: "https://inanna.day/static/privacy.html")
 
     var body: some View {
         VStack(spacing: 18) {

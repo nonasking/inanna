@@ -5,6 +5,10 @@ import SwiftUI
 /// 토큰은 Keychain(이 기기·잠금해제 한정), 서버 주소만 UserDefaults.
 @MainActor
 final class AppState: ObservableObject {
+    /// 기본 서비스 서버 — 앱 사용자는 주소를 몰라도 바로 로그인된다.
+    /// 셀프호스팅 사용자는 첫 화면의 '직접 운영하는 서버'에서 바꾼다.
+    static let defaultServerURL = "https://inanna.day"
+
     @AppStorage("serverURL") var serverURLString = ""
 
     @Published var authToken: String = Keychain.get("authToken") {

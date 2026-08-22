@@ -41,7 +41,7 @@
 
 ## 노출 방식 — **B 적용됨 (2026-07-12)**
 
-**공개 주소: `https://macbookpro.tail9f8fdd.ts.net`** (`tailscale funnel --bg 8787`, 443).
+**공개 주소: `https://inanna.day`** (`tailscale funnel --bg 8787`, 443).
 끄기: `tailscale funnel --https=443 off`. 8443 Funnel(IoT MQTT)은 별개로 유지 중.
 적용 시 확인: 공개 200 / 무인증 API 401 / invite_required true.
 
