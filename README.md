@@ -6,13 +6,8 @@ Most AI companion services let you pick or build a *character*. Inanna flips thi
 
 ## Demo
 
-<img src="demo-call.gif" width="300" alt="Realtime voice call with live captions">
+https://github.com/user-attachments/assets/75ce9049-d415-40b2-9746-dfe370505219
 
-*A realtime voice call — the companion speaks while live captions flow in.*
-
-
-
-https://github.com/user-attachments/assets/3ac1aab1-ca41-43dd-bc6d-38d4fcf71007
 *Screen and audio were captured separately and merged in editing, so A/V sync drifts slightly in places.*
 
 ## Principles
