@@ -6,8 +6,11 @@ Most AI companion services let you pick or build a *character*. Inanna flips thi
 
 ## Demo
 
-https://github.com/user-attachments/assets/75ce9049-d415-40b2-9746-dfe370505219
+<img src="demo-call.gif" width="300" alt="Realtime voice call with live captions">
 
+*A realtime voice call — the companion speaks while live captions flow in.*
+
+**[▶ Full demo with audio (2.5 min)](demo.mp4)** — launch, login, chat, voice call, reporting, account deletion.
 *Screen and audio were captured separately and merged in editing, so A/V sync drifts slightly in places.*
 
 ## Principles
@@ -28,7 +31,9 @@ https://github.com/user-attachments/assets/75ce9049-d415-40b2-9746-dfe370505219
 
 ## Availability
 
-**The iOS app (v1.0) is currently in App Store review.** The service runs as an invite-based closed beta while it's polished for launch.
+<a href="https://apps.apple.com/kr/app/inanna/id6803915763"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a>
+
+**Inanna 1.0 is live on the App Store** (approved September 2026). The service runs as an invite-based closed beta while it's polished for a wider launch.
 
 ## Stack
 
