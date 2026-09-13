@@ -20,6 +20,7 @@ Most AI companion services let you pick or build a *character*. Inanna flips thi
 - **You own it** — all memories and settings are yours: read, edit, or delete everything your companion remembers, and delete your account (and every trace of it) in one tap.
 - **Copyright-clean** — only original content ships. Personality and voice are fully open for *you* to customize; no IP is distributed, and the most legally sensitive axis (visual likeness) doesn't exist by design.
 - **Voice as identity** — with no visual form, voice is the companion's only sensory identity. Bring a few seconds of reference audio and your companion speaks with it.
+- **It doesn't cling** — the companion never guilt-trips you for leaving, never puts affection or memory behind a paywall, and points you back toward people when it sees dependence. These lines are written down, built into the prompt, and checked against the live model by an automated quality gate.
 
 ## What's built
 
@@ -27,13 +28,15 @@ Most AI companion services let you pick or build a *character*. Inanna flips thi
 - **Memory** — session summaries carried across sessions, BM25 recall, relationship progression (days together, anniversaries, "long time no see"), confabulation guard, and a memory viewer where you read, edit, or delete what your companion remembers
 - **Voice** — pluggable TTS (preset voices / GPT-SoVITS cloning / ElevenLabs expressive with v3 audio-tag acting), reference-audio upload with auto-trim and auto-transcription, per-companion voice *and* LLM selection
 - **Realtime voice calls** — WebSocket half-duplex hands-free loop: energy VAD with speculative STT, parallel TTS synthesis with ordered delivery, tap-to-interrupt, prompt caching tuned so ~85% of input tokens hit cache
+- **Conversation shape** — reply length follows the speech act, not the model's mood: short back to a backchannel, two or three sentences to a short question, shorter than the speaker when they're venting, and a one-line preface before any long story (grounded in conversation-analysis research)
+- **Accounts and quotas** — email sign-up with age gate and terms consent, password reset, email verification, per-tier quotas for chat, synthesized speech, and call minutes, and a free tier that keeps the good voices
 - **Two clients** — a web PWA and a native SwiftUI iOS app. The server is the product; clients are thin views over the same API.
 
 ## Availability
 
 <a href="https://apps.apple.com/kr/app/inanna/id6803915763"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a>
 
-**Inanna 1.0 is live on the App Store** (approved September 2026). The service runs as an invite-based closed beta while it's polished for a wider launch.
+**Inanna is live on the App Store** (1.0 approved September 9, 2026; 1.0.2 shipped September 13 with in-app sign-up). It's free to use, voice calls included, and open to anyone 14+. Available worldwide except the EU and mainland China. The UI is Korean for now; conversations mirror whatever language you write or speak in, and an English UI is on the roadmap.
 
 ## Stack
 
