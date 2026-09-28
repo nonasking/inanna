@@ -16,9 +16,6 @@ https://github.com/user-attachments/assets/c3bfd4a8-2cd3-4a5c-b5c3-2dd2be400fd7
 
 *A realtime voice call — the companion speaks while live captions flow in.*
 
-**[▶ Full demo with audio (2.5 min)](demo.mp4)** — launch, login, chat, voice call, reporting, account deletion.
-*Screen and audio were captured separately and merged in editing, so A/V sync drifts slightly in places.*
-
 ## Principles
 
 - **Relationship-first** — persona derives from the relationship, not the other way around.
