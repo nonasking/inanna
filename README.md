@@ -39,7 +39,7 @@ https://github.com/user-attachments/assets/c3bfd4a8-2cd3-4a5c-b5c3-2dd2be400fd7
 
 <a href="https://apps.apple.com/kr/app/inanna/id6803915763"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a>
 
-**Inanna is live on the App Store** (1.0 approved September 9, 2026; 1.0.2 shipped September 13 with in-app sign-up). It's free to use, voice calls included, and open to anyone 14+. Available worldwide except the EU and mainland China. The UI is Korean for now; conversations mirror whatever language you write or speak in, and an English UI is on the roadmap.
+**Inanna is live on the App Store** (1.0 approved September 9, 2026; 1.0.8 shipped October 22 with English UI, a usage screen, and call recovery after alarms or incoming calls). It's free to use, voice calls included, and open to anyone 18+. Available worldwide except the EU and mainland China. The UI is in Korean and English; conversations mirror whatever language you write or speak in.
 
 ## Stack
 
