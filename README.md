@@ -27,21 +27,21 @@ https://github.com/user-attachments/assets/ae99a8d8-a972-4728-8f6c-8671dead9cf5
 
 - **Relationship engine** — templates (partner/friend/sibling/…), a prompt compiler that keeps persona blocks invariant across relationship swaps, preview chat, Character Card V2/V3 import
 - **Memory** — session summaries carried across sessions, BM25 recall, relationship progression (days together, anniversaries, "long time no see"), confabulation guard, and a memory viewer where you read, edit, or delete what your companion remembers
-- **Voice** — pluggable TTS (preset voices / GPT-SoVITS cloning / ElevenLabs expressive with v3 audio-tag acting), reference-audio upload with auto-trim and auto-transcription, per-companion voice *and* LLM selection
-- **Realtime voice calls** — WebSocket half-duplex hands-free loop: energy VAD with speculative STT, parallel TTS synthesis with ordered delivery, tap-to-interrupt, prompt caching tuned so ~85% of input tokens hit cache
+- **Voice** — pluggable TTS (preset voices / GPT-SoVITS cloning / ElevenLabs expressive with v3 audio-tag acting), reference-audio upload with auto-trim and auto-transcription, per-companion voice *and* LLM selection, loudness normalized to call level, and each sentence read by a voice that speaks its language
+- **Realtime voice calls** — WebSocket hands-free loop: energy VAD with speculative STT, parallel TTS synthesis with ordered delivery, barge-in (just start talking to interrupt) with echo-safe thresholds, prompt caching tuned so ~85% of input tokens hit cache. On iOS the call keeps running with the screen locked, survives alarms and incoming calls, and switches between earpiece and speaker as you raise or lower the phone
 - **Conversation shape** — reply length follows the speech act, not the model's mood: short back to a backchannel, two or three sentences to a short question, shorter than the speaker when they're venting, and a one-line preface before any long story (grounded in conversation-analysis research)
-- **Accounts and quotas** — email sign-up with age gate and terms consent, password reset, email verification, per-tier quotas for chat, synthesized speech, and call minutes, and a free tier that keeps the good voices
+- **Accounts and quotas** — email sign-up with age gate and terms consent, password reset, email verification, sessions that stay signed in while you use them, per-tier quotas for chat, synthesized speech, and call minutes that reset at your local midnight, and a free tier that keeps the good voices
 - **Two clients** — a web PWA and a native SwiftUI iOS app. The server is the product; clients are thin views over the same API.
 
 ## Availability
 
 <a href="https://apps.apple.com/kr/app/inanna/id6803915763"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a>
 
-**Inanna is live on the App Store** (1.0 approved September 9, 2026; 1.0.8 shipped October 22 with English UI, a usage screen, and call recovery after alarms or incoming calls). It's free to use, voice calls included, and open to anyone 18+. Available worldwide except the EU and mainland China. The UI is in Korean and English; conversations mirror whatever language you write or speak in.
+**Inanna is live on the App Store** (1.0 approved September 9, 2026; 1.0.10 shipped October 27 with hands-free calls that keep going when the screen locks). It's free to use, voice calls included, and open to anyone 18+. Available worldwide except the EU and mainland China. The UI is in Korean and English; conversations mirror whatever language you write or speak in.
 
 ## Stack
 
-Python / FastAPI · vanilla-JS PWA client · SwiftUI iOS client · pluggable LLM providers (Anthropic / Ollama / OpenAI-compatible) · pluggable TTS (Edge, GPT-SoVITS, ElevenLabs) · whisper.cpp STT · SQLite + YAML personas.
+Python / FastAPI · vanilla-JS PWA client · SwiftUI iOS client · pluggable LLM providers (Anthropic / Ollama / OpenAI-compatible) · pluggable TTS (Edge, GPT-SoVITS, ElevenLabs) · STT via ElevenLabs Scribe or self-hosted whisper.cpp · SQLite + YAML personas.
 
 ## Source
 
