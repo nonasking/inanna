@@ -35,9 +35,9 @@ https://github.com/user-attachments/assets/ae99a8d8-a972-4728-8f6c-8671dead9cf5
 
 ## Availability
 
-<a href="https://apps.apple.com/kr/app/inanna/id6803915763"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a>
+<a href="https://apps.apple.com/app/inanna/id6803915763"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a>
 
-**Inanna is live on the App Store** (1.0 approved September 9, 2026; 1.0.10 shipped October 27 with hands-free calls that keep going when the screen locks). It's free to use, voice calls included, and open to anyone 18+. Available worldwide except mainland China. The UI is in Korean and English; conversations mirror whatever language you write or speak in.
+**Inanna is live on the App Store** (1.0 approved September 9, 2026; 1.0.10 added hands-free calls that keep going when the screen locks; the current version is 1.0.11, November 2026). It's free to use, voice calls included, and open to anyone 18+. You can also use it in the browser at [inanna.day](https://inanna.day). Available worldwide except mainland China. The UI is in Korean and English; conversations mirror whatever language you write or speak in.
 
 ## Stack
 
