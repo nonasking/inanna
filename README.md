@@ -31,13 +31,13 @@ https://github.com/user-attachments/assets/ae99a8d8-a972-4728-8f6c-8671dead9cf5
 - **Realtime voice calls** — WebSocket hands-free loop: energy VAD with speculative STT, parallel TTS synthesis with ordered delivery, barge-in (just start talking to interrupt) with echo-safe thresholds, prompt caching tuned so ~85% of input tokens hit cache. On iOS the call keeps running with the screen locked, survives alarms and incoming calls, and switches between earpiece and speaker as you raise or lower the phone
 - **Conversation shape** — reply length follows the speech act, not the model's mood: short back to a backchannel, two or three sentences to a short question, shorter than the speaker when they're venting, and a one-line preface before any long story (grounded in conversation-analysis research)
 - **Accounts and quotas** — email sign-up with age gate and terms consent, password reset, email verification, sessions that stay signed in while you use them, per-tier quotas for chat, synthesized speech, and call minutes that reset at your local midnight, and a free tier that keeps the good voices
-- **Two clients** — a web PWA and a native SwiftUI iOS app. The server is the product; clients are thin views over the same API.
+- **Three clients** — a web PWA, a native SwiftUI iOS app, and a native Android app (Kotlin, Jetpack Compose). The server is the product; clients are thin views over the same API.
 
 ## Availability
 
-<a href="https://apps.apple.com/app/inanna/id6803915763"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a>
+<a href="https://apps.apple.com/app/inanna/id6803915763"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a> <a href="https://play.google.com/store/apps/details?id=dev.nonasking.inanna"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="58"></a>
 
-**Inanna is live on the App Store** (1.0 approved September 9, 2026; 1.0.10 added hands-free calls that keep going when the screen locks; the current version is 1.0.11, November 2026). It's free to use, voice calls included, and open to anyone 18+. You can also use it in the browser at [inanna.day](https://inanna.day). Available worldwide except mainland China. The UI is in Korean and English; conversations mirror whatever language you write or speak in.
+**Inanna is live on the App Store and Google Play** (Android released November 18, 2026; iOS 1.0 approved September 9, 2026; 1.0.10 added hands-free calls that keep going when the screen locks; the current version is 1.0.11, November 2026). It's free to use, voice calls included, and open to anyone 18+. You can also use it in the browser at [inanna.day](https://inanna.day). Available worldwide except mainland China. The UI is in Korean and English; conversations mirror whatever language you write or speak in.
 
 ## Stack
 
